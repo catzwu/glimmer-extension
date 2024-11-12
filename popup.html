@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mochi Flashcard Creator</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Highlights Section -->
+    <div id="highlights-container">
+      <h3>Current Highlights</h3>
+      <div id="highlights-list">
+        <div class="no-highlights">
+          Select text on the page to create highlights
+        </div>
+      </div>
+    </div>
+
+    <!-- API Key Section -->
+    <div class="api-key-section">
+      <div class="api-key-input-group">
+        <input 
+          type="text" 
+          id="mochi-api-key" 
+          placeholder="Enter Mochi API Key"
+          aria-label="Mochi API Key"
+        >
+        <button id="save-api-key" aria-label="Save API Key">
+          Save
+        </button>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="actions">
+      <button id="create-cards" aria-label="Create Flashcards">
+        Create Flashcards
+      </button>
+      <button id="export-to-mochi" aria-label="Export to Mochi">
+        Export to Mochi
+      </button>
+      <button id="clear-highlights" aria-label="Clear Highlights">
+        Clear Highlights
+      </button>
+    </div>
+
+    <!-- Status Messages -->
+    <div id="status-message" role="status" aria-live="polite"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

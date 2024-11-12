@@ -1,0 +1,157 @@
+:root {
+  --primary-color: #4CAF50;
+  --primary-hover: #45a049;
+  --error-color: #f44336;
+  --error-light: #ffebee;
+  --error-dark: #c62828;
+  --success-color: #4caf50;
+  --success-light: #e8f5e9;
+  --success-dark: #2e7d32;
+  --border-color: #ddd;
+  --text-primary: #333;
+  --text-secondary: #666;
+  --text-light: #888;
+  --background-light: #f5f5f5;
+}
+
+/* Container styles */
+.container {
+  width: 300px;
+  padding: 15px;
+}
+
+/* API Key section */
+.api-key-section {
+  margin: 15px 0;
+  display: none;
+}
+
+.api-key-input-group {
+  display: flex;
+  gap: 8px;
+}
+
+#mochi-api-key {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+#save-api-key {
+  width: auto;
+  margin: 0;
+  padding: 8px 16px;
+  white-space: nowrap;
+}
+
+/* Button styles */
+button {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin: 5px;
+  width: 100%;
+  transition: background-color 0.2s, opacity 0.2s;
+}
+
+button:hover {
+  background-color: var(--primary-hover);
+}
+
+button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+button.error {
+  background-color: var(--error-color);
+  animation: shake 0.4s linear;
+}
+
+/* Status message styles */
+#status-message {
+  margin-top: 10px;
+  padding: 8px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+#status-message.error {
+  background-color: var(--error-light);
+  color: var(--error-dark);
+  border-left: 4px solid var(--error-color);
+}
+
+#status-message.success {
+  background-color: var(--success-light);
+  color: var(--success-dark);
+  border-left: 4px solid var(--success-color);
+}
+
+/* Flashcard preview styles */
+.flashcard-preview {
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  margin: 15px 0;
+  padding: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card-front {
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+}
+
+.card-front strong,
+.card-back strong {
+  color: var(--text-secondary);
+  display: block;
+  margin-bottom: 8px;
+}
+
+.context {
+  font-size: 0.9em;
+  color: var(--text-secondary);
+  margin: 8px 0;
+  line-height: 1.4;
+}
+
+/* Highlight list styles */
+#highlights-list {
+  max-height: 400px;
+  overflow-y: auto;
+  margin: 10px 0;
+}
+
+.highlight-item {
+  background: var(--background-light);
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 4px;
+  border-left: 4px solid var(--primary-color);
+}
+
+.no-highlights {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 20px;
+  font-style: italic;
+  background: var(--background-light);
+  border-radius: 4px;
+  margin: 10px 0;
+}
+
+/* Animations */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
