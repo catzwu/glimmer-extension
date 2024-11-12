@@ -2,9 +2,6 @@
 let highlights = [];
 console.log("Mochi Flashcard Creator: Content script loaded");
 
-/**
- * Helper Functions
- */
 function createHighlight(selection) {
   try {
     const range = selection.getRangeAt(0);
@@ -56,9 +53,7 @@ function createHighlight(selection) {
     const highlight = {
       id: highlightId,
       text: highlightedText,
-      context: getContext(
-        document.querySelector(`[data-highlight-id="${highlightId}"]`)
-      ),
+      context: getContext(document.querySelector(`[data-highlight-id="${highlightId}"]`)),
       url: window.location.href,
       title: document.title,
     };
@@ -94,18 +89,28 @@ function getTextNodesInRange(range) {
   const walker = document.createTreeWalker(
     range.commonAncestorContainer,
     NodeFilter.SHOW_TEXT,
-    {
-      acceptNode: function (node) {
-        return isNodeInRange(node, range)
-          ? NodeFilter.FILTER_ACCEPT
-          : NodeFilter.FILTER_REJECT;
-      },
-    }
+    null
   );
 
   let node;
   while ((node = walker.nextNode())) {
-    textNodes.push(node);
+    const nodeRange = document.createRange();
+    nodeRange.selectNodeContents(node);
+    
+    if (
+      range.compareBoundaryPoints(Range.START_TO_END, nodeRange) < 0 &&
+      range.compareBoundaryPoints(Range.END_TO_START, nodeRange) > 0
+    ) {
+      textNodes.push(node);
+    }
+  }
+
+  // Make sure we include the start and end containers if they're text nodes
+  if (range.startContainer.nodeType === Node.TEXT_NODE) {
+    textNodes.unshift(range.startContainer);
+  }
+  if (range.endContainer.nodeType === Node.TEXT_NODE && range.endContainer !== range.startContainer) {
+    textNodes.push(range.endContainer);
   }
 
   return textNodes;
@@ -171,9 +176,22 @@ function showHighlightFeedback(x, y) {
   setTimeout(() => feedback.remove(), 1500);
 }
 
-/**
- * Event Listeners
- */
+function removeHighlight(highlightId) {
+  const highlightElement = document.querySelector(`[data-highlight-id="${highlightId}"]`);
+  if (highlightElement) {
+    const parent = highlightElement.parentNode;
+    parent.replaceChild(document.createTextNode(highlightElement.textContent), highlightElement);
+    highlights = highlights.filter(h => h.id !== highlightId);
+    
+    // Notify popup of removed highlight
+    chrome.runtime.sendMessage({
+      action: "removeHighlight",
+      highlightId: highlightId
+    });
+  }
+}
+
+// Event Listeners
 document.addEventListener("mouseup", function (e) {
   const selection = window.getSelection();
   if (!selection || !selection.toString().trim()) return;
@@ -183,6 +201,13 @@ document.addEventListener("mouseup", function (e) {
 
   if (createHighlight(selection)) {
     showHighlightFeedback(e.clientX, e.clientY);
+  }
+});
+
+document.addEventListener("click", function(e) {
+  const highlightElement = e.target.closest(".mochi-highlight-selection");
+  if (highlightElement) {
+    removeHighlight(highlightElement.dataset.highlightId);
   }
 });
 
@@ -198,6 +223,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       parent.replaceChild(document.createTextNode(el.textContent), el);
     });
     highlights = [];
+    sendResponse({ success: true });
+  } else if (request.action === "removeHighlight") {
+    removeHighlight(request.highlightId);
     sendResponse({ success: true });
   }
   return true;

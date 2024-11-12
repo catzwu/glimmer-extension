@@ -100,6 +100,23 @@ async function exportToMochi(apiKey, highlights) {
   }
 }
 
+function removeHighlight(highlightId) {
+  chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+    try {
+      await chrome.tabs.sendMessage(tabs[0].id, {
+        action: "removeHighlight",
+        highlightId: highlightId
+      });
+      
+      currentHighlights = currentHighlights.filter(h => h.id !== highlightId);
+      updateHighlightsList();
+      showStatus("Highlight removed", "success");
+    } catch (error) {
+      showStatus("Failed to remove highlight", "error");
+    }
+  });
+}
+
 async function updateHighlightsList() {
   try {
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -126,7 +143,19 @@ async function updateHighlightsList() {
       response.forEach((highlight) => {
         const div = document.createElement("div");
         div.className = "highlight-item";
-        div.textContent = highlight.text;
+        
+        const textDiv = document.createElement("div");
+        textDiv.className = "highlight-text";
+        textDiv.textContent = highlight.text;
+        
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "delete-highlight";
+        deleteButton.innerHTML = "×";
+        deleteButton.setAttribute("aria-label", "Delete highlight");
+        deleteButton.onclick = () => removeHighlight(highlight.id);
+        
+        div.appendChild(textDiv);
+        div.appendChild(deleteButton);
         container.appendChild(div);
       });
     }
@@ -148,6 +177,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     currentHighlights.push(request.highlight);
     updateHighlightsList();
     showStatus("New highlight added!", "success");
+  } else if (request.action === "removeHighlight") {
+    currentHighlights = currentHighlights.filter(h => h.id !== request.highlightId);
+    updateHighlightsList();
   }
 });
 
