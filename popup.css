@@ -126,6 +126,23 @@ button.error {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.card-header strong {
+  color: var(--text-secondary);
+}
+
+.card-header .delete-highlight {
+  padding: 2px 6px;
+  margin: 0;
+  font-size: 16px;
+}
+
 .card-front {
   border-bottom: 1px solid var(--border-color);
   padding-bottom: 12px;

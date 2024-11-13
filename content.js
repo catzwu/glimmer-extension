@@ -1,5 +1,6 @@
 // Initialize highlights array
 let highlights = [];
+let aiCards = [];
 console.log("Mochi Flashcard Creator: Content script loaded");
 
 function createHighlight(selection) {
@@ -216,13 +217,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "ping") {
     sendResponse(true);
   } else if (request.action === "getHighlights") {
-    sendResponse(highlights);
+    sendResponse({ highlights, aiCards });
   } else if (request.action === "clearHighlights") {
     document.querySelectorAll(".mochi-highlight-selection").forEach((el) => {
       const parent = el.parentNode;
       parent.replaceChild(document.createTextNode(el.textContent), el);
     });
     highlights = [];
+    aiCards = [];
+    sendResponse({ success: true });
+  } else if (request.action === "setAICards") {
+    aiCards = request.cards;
     sendResponse({ success: true });
   } else if (request.action === "removeHighlight") {
     removeHighlight(request.highlightId);

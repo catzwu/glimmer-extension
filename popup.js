@@ -62,6 +62,26 @@ function removeHighlight(highlightId) {
   });
 }
 
+async function removeCard(index) {
+  try {
+    // Remove card from array
+    aiCards.splice(index, 1);
+    
+    // Update content script
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    await chrome.tabs.sendMessage(tabs[0].id, {
+      action: "setAICards",
+      cards: aiCards,
+    });
+    
+    // Update display
+    updateHighlightsList();
+    showStatus("Card removed", "success");
+  } catch (error) {
+    showStatus("Failed to remove card", "error");
+  }
+}
+
 async function updateHighlightsList() {
   try {
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -79,13 +99,17 @@ async function updateHighlightsList() {
     });
 
     if (response) {
-      currentHighlights = response;
+      currentHighlights = response.highlights;
+      aiCards = response.aiCards;
+      
       const container = document.getElementById("highlights-list");
-      container.innerHTML = response.length
+
+      // First show highlights
+      container.innerHTML = currentHighlights.length
         ? ""
         : '<div class="no-highlights">No highlights yet. Select text on the page to create highlights.</div>';
 
-      response.forEach((highlight) => {
+      currentHighlights.forEach((highlight) => {
         const div = document.createElement("div");
         div.className = "highlight-item";
 
@@ -103,6 +127,16 @@ async function updateHighlightsList() {
         div.appendChild(deleteButton);
         container.appendChild(div);
       });
+
+      // Then show AI cards if we have them
+      if (aiCards.length > 0) {
+        const cardsContainer = document.createElement('div');
+        cardsContainer.innerHTML = "<h3>AI-Generated Flashcard Previews</h3>";
+        aiCards.forEach((card, index) => {
+          cardsContainer.appendChild(createAIFlashcardPreview(card, index, removeCard));
+        });
+        container.appendChild(cardsContainer);
+      }
     }
   } catch (error) {
     showStatus(
@@ -131,7 +165,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // Load Mochi API key
+  // Load API keys
   const result = await chrome.storage.local.get(["mochiApiKey"]);
   if (result.mochiApiKey) {
     document.getElementById("mochi-api-key").value = result.mochiApiKey;
@@ -183,8 +217,15 @@ document.getElementById("create-cards").addEventListener("click", async () => {
 
     // Generate flashcards
     aiCards = await generateAIFlashcards(currentHighlights);
+
+    // Store AI cards in content script
+    await chrome.tabs.sendMessage(tabs[0].id, {
+      action: "setAICards",
+      cards: aiCards,
+    });
+
     aiCards.forEach((card, index) => {
-      container.appendChild(createAIFlashcardPreview(card, index));
+      container.appendChild(createAIFlashcardPreview(card, index, removeCard));
     });
 
     showStatus(
@@ -222,7 +263,10 @@ document
 
       await chrome.tabs.sendMessage(tabs[0].id, { action: "clearHighlights" });
 
+      // Clear both highlights and AI cards
       currentHighlights = [];
+      aiCards = [];
+
       document.getElementById("highlights-list").innerHTML =
         '<div class="no-highlights">No highlights yet. Select text on the page to create highlights.</div>';
       showStatus("Highlights cleared!", "success");

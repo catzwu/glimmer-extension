@@ -58,17 +58,38 @@ async function generateFlashcard(text, context) {
  * Creates a preview element for an AI-generated flashcard
  * @param {Object} card - The flashcard data
  * @param {number} index - The card index
+ * @param {Function} onDelete - Callback function when delete button is clicked
  * @returns {HTMLElement} - The preview element
  */
-function createAIFlashcardPreview(card, index) {
+function createAIFlashcardPreview(card, index, onDelete) {
   const cardDiv = document.createElement("div");
   cardDiv.className = "flashcard-preview";
 
+  // Header with title and delete button
+  const headerDiv = document.createElement("div");
+  headerDiv.className = "card-header";
+  
+  const titleSpan = document.createElement("strong");
+  titleSpan.textContent = `Card ${index + 1}`;
+  headerDiv.appendChild(titleSpan);
+
+  if (onDelete) {
+    const deleteButton = document.createElement("button");
+    deleteButton.className = "delete-highlight";
+    deleteButton.innerHTML = "×";
+    deleteButton.setAttribute("aria-label", "Delete card");
+    deleteButton.onclick = () => onDelete(index);
+    headerDiv.appendChild(deleteButton);
+  }
+
+  cardDiv.appendChild(headerDiv);
+
+  // Card content
   const [front, back] = card.split("---");
 
   const frontDiv = document.createElement("div");
   frontDiv.className = "card-front";
-  frontDiv.innerHTML = `<strong>Card ${index + 1} - Front</strong>${front}`;
+  frontDiv.innerHTML = `<strong>Front</strong>${front}`;
 
   const backDiv = document.createElement("div");
   backDiv.className = "card-back";
