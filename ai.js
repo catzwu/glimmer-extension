@@ -16,7 +16,7 @@ async function generateFlashcard(text, context) {
   }
 
   const prompt =
-    'Transform the provided text into atomic flashcards that optimize learning through spaced repetition. Each flashcard should:\nFront Side Requirements\n\nAsk a single, specific question\nFocus on understanding rather than pure memorization\nUse clear, unambiguous language\nWhen appropriate, include relevant context without giving away the answer\nFor concepts requiring computation or problem-solving, ask for the process rather than just the result\n\nBack Side Requirements\n\nProvide a concise, focused answer that fully addresses the question, with minimal words\nInclude relevant examples or visual aids when helpful\nFor problem-solving questions, show the key steps in the solution\nWhere applicable, note important connections to related concepts\nAdd mnemonics or memory aids for particularly challenging material\n\nFormatting Rules\nFor each flashcard, output in this format:\nQuestion\n---\nAnswer\n#Relevant topic tags for organization\nNote: [Optional - Any special study tips or mnemonics]\nProcessing Instructions\nWhen converting text into flashcards:\n\nBreak down complex ideas into multiple atomic cards\n\nEach card should test one specific fact or concept\nAvoid compound questions\nCreate separate cards for related but distinct ideas\n\n\nApply these transformation rules:\n\nConvert statements into questions that promote active recall\nRephrase to eliminate textbook-style language\nRemove redundant information\nAdd context when the original text assumes background knowledge\nCreate bidirectional cards for important relationships (A→B and B→A)\n\nApply these quality checks:\n\nDoes the card test understanding rather than recognition?\nIs the question clear without seeing the answer?\nCould someone familiar with the subject verify the answer\'s correctness?\nIs the card\'s scope appropriate (neither too broad nor too narrow)?\n\n\nExamples\nHere are three example transformations:\nOriginal text: "The mitochondria is the powerhouse of the cell, producing ATP through cellular respiration."\nBad card:\nWhat is the mitochondria?\n---\nThe powerhouse of the cell that produces ATP through cellular respiration.\nGood cards:\nThrough what process do mitochondria produce ATP?\n---\nCellular respiration\n#biology, #cellular-processes\n\nWhy are mitochondria often called the "powerhouse" of the cell?\n---\nThey produce ATP (energy) through cellular respiration, which powers most cellular processes\n#biology, #cellular-processes\nNote: Think of mitochondria as tiny power plants inside each cell\n\nOutput Format\nGenerate the flashcards in this structure:\n\nFirst, list all created flashcards in the specified format. Separate cards with *****.\nDo not say anything besides text that will appear in the flashcards\n\n\nQuality Guidelines\nEach flashcard must:\n\nFollow the minimum information principle (one fact per card)\nBe clear and unambiguous\nFocus on understanding over memorization\nSupport your learning rather than testing your knowledge\nInclude relevant context without excess information\nBe self-contained (understand the question without external reference)\nAvoid sets/enumerations (break into individual cards)\nUse cloze deletions sparingly and only when they enhance learning\n';
+    'Transform the provided text into atomic flashcards that optimize learning through spaced repetition. Each flashcard should:\nFront Side Requirements\n\nAsk a single, specific question\nFocus on understanding rather than pure memorization\nUse clear, unambiguous language\nWhen appropriate, include relevant context without giving away the answer\nFor concepts requiring computation or problem-solving, ask for the process rather than just the result\n\nBack Side Requirements\nProvide a concise, focused answer that fully addresses the question, ideally no more than 10-15 words\nFor problem-solving questions, show the key steps in the solution\n\nFormatting Rules\nFor each flashcard, output in this format:\nQuestion\n---\nAnswer\n#Relevant topic tags for organization\nNote: [Optional - Any special study tips or mnemonics]\nProcessing Instructions\nWhen converting text into flashcards:\n\nBreak down complex ideas into multiple atomic cards\n\nEach card should test one specific fact or concept\nAvoid compound questions\nCreate separate cards for related but distinct ideas\n\n\nApply these transformation rules:\n\nConvert statements into questions that promote active recall\nRephrase to eliminate textbook-style language and shorten where possible\nRemove redundant questions or information\nAdd context when the original text assumes background knowledge\nCreate bidirectional cards for important relationships (A→B and B→A)\n\nApply these quality checks:\n\nDoes the card test understanding rather than recognition?\nIs the question clear without seeing the answer?\nCould someone familiar with the subject verify the answer\'s correctness?\nIs the card\'s scope appropriate (neither too broad nor too narrow)?\n\n\nExamples\nHere are three example transformations:\nOriginal text: "The mitochondria is the powerhouse of the cell, producing ATP through cellular respiration."\nBad card:\nWhat is the mitochondria?\n---\nThe powerhouse of the cell that produces ATP through cellular respiration.\nGood cards:\nThrough what process do mitochondria produce ATP?\n---\nCellular respiration\n#biology, #cellular-processes\n\nWhy are mitochondria often called the "powerhouse" of the cell?\n---\nThey produce ATP (energy) through cellular respiration, which powers most cellular processes\n#biology, #cellular-processes\nNote: Think of mitochondria as tiny power plants inside each cell\n\nOutput Format\nGenerate the flashcards in this structure:\n\nFirst, list all created flashcards in the specified format. Separate cards with *****.\nDo not say anything besides text that will appear in the flashcards\n\n\nQuality Guidelines\nEach flashcard must:\n\nFollow the minimum information principle (one fact per card)\nBe clear and unambiguous\nUse few words\nFocus on understanding over memorization\nBe self-contained (understand the question without external reference)\nAvoid sets/enumerations (break into individual cards)';
 
   const header = {
     "Content-Type": "application/json",
@@ -25,9 +25,10 @@ async function generateFlashcard(text, context) {
     "anthropic-dangerous-direct-browser-access": true,
   };
   const msg = {
-    model: "claude-3-5-sonnet-20241022",
+    model: "claude-3-5-haiku-20241022",
     max_tokens: 1024,
-    system: "You are an expert in flashcard creation.",
+    system:
+      "You create perfect Anki flashcards, in accordance with the twenty rules of formulating knowledge",
     messages: [
       {
         role: "user",
@@ -68,7 +69,7 @@ function createAIFlashcardPreview(card, index, onDelete) {
   // Header with title and delete button
   const headerDiv = document.createElement("div");
   headerDiv.className = "card-header";
-  
+
   const titleSpan = document.createElement("strong");
   titleSpan.textContent = `Card ${index + 1}`;
   headerDiv.appendChild(titleSpan);
@@ -89,11 +90,11 @@ function createAIFlashcardPreview(card, index, onDelete) {
 
   const frontDiv = document.createElement("div");
   frontDiv.className = "card-front";
-  frontDiv.innerHTML = `<strong>Front</strong>${front}`;
+  frontDiv.innerHTML = `${front}`;
 
   const backDiv = document.createElement("div");
   backDiv.className = "card-back";
-  backDiv.innerHTML = `<strong>Back</strong><div class="context">${back}</div>`;
+  backDiv.innerHTML = `<div class="context">${back}</div>`;
 
   cardDiv.appendChild(frontDiv);
   cardDiv.appendChild(backDiv);
