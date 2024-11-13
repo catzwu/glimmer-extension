@@ -1,5 +1,13 @@
+import {
+  hasClaudeKey,
+  generateAIFlashcards,
+  createAIFlashcardPreview,
+  initAI,
+} from "./ai.js";
+
 // State
 let currentHighlights = [];
+let aiCards = [];
 let hasApiKey = false;
 
 /**
@@ -37,78 +45,15 @@ async function canCommunicateWithTab(tabId) {
   }
 }
 
-function createFlashcardPreview(highlight, index) {
-  const cardDiv = document.createElement("div");
-  cardDiv.className = "flashcard-preview";
-
-  const frontDiv = document.createElement("div");
-  frontDiv.className = "card-front";
-  frontDiv.innerHTML = `<strong>Card ${index + 1} - Front</strong>${
-    highlight.text
-  }`;
-
-  const backDiv = document.createElement("div");
-  backDiv.className = "card-back";
-  backDiv.innerHTML = `<strong>Back</strong>
-    <div class="context">${highlight.context}</div>`;
-
-  cardDiv.appendChild(frontDiv);
-  cardDiv.appendChild(backDiv);
-  return cardDiv;
-}
-
-async function exportToMochi(apiKey, highlights) {
-  let header = {
-    "Content-Type": "application/json",
-    Authorization: `Basic ${btoa(apiKey + ":")}`,
-  };
-
-  for (const highlight of highlights) {
-    const card = {
-      content: `${highlight.text}\n---\n${highlight.context}`,
-      "deck-id": "vf6VuQBa",
-    };
-
-    try {
-      const response = await fetch("https://app.mochi.cards/api/cards", {
-        method: "POST",
-        headers: header,
-        credentials: "include",
-        body: JSON.stringify(card),
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error("Invalid API key");
-        } else if (response.status === 403) {
-          throw new Error(
-            response.statusText ||
-              "Access denied. Please check your API key and try again."
-          );
-        } else if (response.status === 429) {
-          throw new Error("Too many requests. Please try again later");
-        } else {
-          throw new Error(
-            response.statusText ||
-              `Failed to create card (HTTP ${response.status})`
-          );
-        }
-      }
-    } catch (error) {
-      throw error;
-    }
-  }
-}
-
 function removeHighlight(highlightId) {
   chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     try {
       await chrome.tabs.sendMessage(tabs[0].id, {
         action: "removeHighlight",
-        highlightId: highlightId
+        highlightId: highlightId,
       });
-      
-      currentHighlights = currentHighlights.filter(h => h.id !== highlightId);
+
+      currentHighlights = currentHighlights.filter((h) => h.id !== highlightId);
       updateHighlightsList();
       showStatus("Highlight removed", "success");
     } catch (error) {
@@ -143,17 +88,17 @@ async function updateHighlightsList() {
       response.forEach((highlight) => {
         const div = document.createElement("div");
         div.className = "highlight-item";
-        
+
         const textDiv = document.createElement("div");
         textDiv.className = "highlight-text";
         textDiv.textContent = highlight.text;
-        
+
         const deleteButton = document.createElement("button");
         deleteButton.className = "delete-highlight";
         deleteButton.innerHTML = "×";
         deleteButton.setAttribute("aria-label", "Delete highlight");
         deleteButton.onclick = () => removeHighlight(highlight.id);
-        
+
         div.appendChild(textDiv);
         div.appendChild(deleteButton);
         container.appendChild(div);
@@ -178,18 +123,25 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     updateHighlightsList();
     showStatus("New highlight added!", "success");
   } else if (request.action === "removeHighlight") {
-    currentHighlights = currentHighlights.filter(h => h.id !== request.highlightId);
+    currentHighlights = currentHighlights.filter(
+      (h) => h.id !== request.highlightId
+    );
     updateHighlightsList();
   }
 });
 
 document.addEventListener("DOMContentLoaded", async () => {
+  // Load Mochi API key
   const result = await chrome.storage.local.get(["mochiApiKey"]);
   if (result.mochiApiKey) {
     document.getElementById("mochi-api-key").value = result.mochiApiKey;
     hasApiKey = true;
   }
 
+  // Initialize AI functionality
+  await initAI();
+
+  // Check tab communication
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
   if (tabs.length > 0) {
     const canCommunicate = await canCommunicateWithTab(tabs[0].id);
@@ -205,6 +157,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   updateHighlightsList();
 });
 
+// Create AI flashcards
 document.getElementById("create-cards").addEventListener("click", async () => {
   const button = document.getElementById("create-cards");
   button.disabled = true;
@@ -224,41 +177,26 @@ document.getElementById("create-cards").addEventListener("click", async () => {
       throw new Error("No highlights to create flashcards from!");
     }
 
+    showStatus("Generating AI flashcards...", "success");
     const container = document.getElementById("highlights-list");
-    container.innerHTML = "<h3>Flashcard Previews</h3>";
+    container.innerHTML = "<h3>AI-Generated Flashcard Previews</h3>";
 
-    currentHighlights.forEach((highlight, index) => {
-      container.appendChild(createFlashcardPreview(highlight, index));
+    // Generate flashcards
+    aiCards = await generateAIFlashcards(currentHighlights);
+    aiCards.forEach((card, index) => {
+      container.appendChild(createAIFlashcardPreview(card, index));
     });
 
     showStatus(
-      'Flashcards created! Click "Export to Mochi" to save them.',
+      'AI Flashcards created! Click "Export to Mochi" to save them.',
       "success"
     );
   } catch (error) {
+    console.error("Error creating flashcards:", error);
     handleButtonState("create-cards", true);
     showStatus(error.message, "error");
   } finally {
     button.disabled = false;
-  }
-});
-
-document.getElementById("save-api-key").addEventListener("click", async () => {
-  const apiKey = document.getElementById("mochi-api-key").value.trim();
-  if (!apiKey) {
-    showStatus("Please enter an API key", "error");
-    return;
-  }
-
-  await chrome.storage.local.set({ mochiApiKey: apiKey });
-  hasApiKey = true;
-  document.querySelector(".api-key-section").style.display = "none";
-  showStatus("API key saved!", "success");
-});
-
-document.getElementById("mochi-api-key").addEventListener("keypress", (e) => {
-  if (e.key === "Enter") {
-    document.getElementById("save-api-key").click();
   }
 });
 
@@ -299,6 +237,7 @@ document
     }
   });
 
+// Export to Mochi
 document
   .getElementById("export-to-mochi")
   .addEventListener("click", async () => {
@@ -319,29 +258,61 @@ document
         throw new Error("Please refresh the page to use the highlighter");
       }
 
-      if (currentHighlights.length === 0) {
-        throw new Error("No highlights to export!");
+      if (aiCards.length === 0) {
+        throw new Error("No cards to export!");
       }
 
       let apiKey = document.getElementById("mochi-api-key").value;
 
       if (!hasApiKey && !apiKey) {
-        document.querySelector(".api-key-section").style.display = "block";
+        document.querySelector(".api-keys-section").style.display = "block";
         throw new Error("Please enter your Mochi API key");
       }
 
       if (!hasApiKey && apiKey) {
         await chrome.storage.local.set({ mochiApiKey: apiKey });
         hasApiKey = true;
-        document.querySelector(".api-key-section").style.display = "none";
       }
 
-      await exportToMochi(apiKey, currentHighlights);
+      for (const card of aiCards) {
+        const card_data = {
+          content: card,
+          "deck-id": "mMrpYLrT",
+        };
+
+        const response = await fetch("https://app.mochi.cards/api/cards", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Basic ${btoa(apiKey + ":")}`,
+          },
+          body: JSON.stringify(card_data),
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error("Invalid API key");
+          } else if (response.status === 403) {
+            throw new Error(
+              response.statusText ||
+                "Access denied. Please check your API key and try again."
+            );
+          } else if (response.status === 429) {
+            throw new Error("Too many requests. Please try again later");
+          } else {
+            throw new Error(
+              response.statusText ||
+                `Failed to create card (HTTP ${response.status})`
+            );
+          }
+        }
+      }
+
       showStatus("Successfully exported cards to Mochi!", "success");
     } catch (error) {
       if (error.message.includes("Failed to create card")) {
         hasApiKey = false;
-        document.querySelector(".api-key-section").style.display = "block";
+        document.querySelector(".api-keys-section").style.display = "block";
         showStatus("Invalid API key. Please check and try again.", "error");
       } else {
         handleButtonState("export-to-mochi", true);

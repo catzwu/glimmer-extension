@@ -20,6 +20,28 @@
   padding: 15px;
 }
 
+/* API Keys section */
+.api-keys-section {
+  margin: 15px 0;
+  display: none;
+}
+
+.api-key-input-group {
+  margin-bottom: 8px;
+}
+
+.api-key-input-group input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.api-key-input-group input::placeholder {
+  color: var(--text-light);
+}
+
 /* API Key section */
 .api-key-section {
   margin: 15px 0;

@@ -19,7 +19,7 @@
     </div>
 
     <!-- API Key Section -->
-    <div class="api-key-section">
+    <div class="api-keys-section">
       <div class="api-key-input-group">
         <input 
           type="text" 
@@ -27,16 +27,21 @@
           placeholder="Enter Mochi API Key"
           aria-label="Mochi API Key"
         >
-        <button id="save-api-key" aria-label="Save API Key">
-          Save
-        </button>
+      </div>
+      <div class="api-key-input-group">
+        <input 
+          type="text" 
+          id="claude-api-key" 
+          placeholder="Enter Claude API Key"
+          aria-label="Claude API Key"
+        >
       </div>
     </div>
 
     <!-- Action Buttons -->
     <div class="actions">
       <button id="create-cards" aria-label="Create Flashcards">
-        Create Flashcards
+        Create AI Flashcards
       </button>
       <button id="export-to-mochi" aria-label="Export to Mochi">
         Export to Mochi
@@ -50,6 +55,6 @@
     <div id="status-message" role="status" aria-live="polite"></div>
   </div>
 
-  <script src="popup.js"></script>
+  <script src="popup.js" type="module"></script>
 </body>
 </html>

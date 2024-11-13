@@ -9,7 +9,8 @@
     "scripting"
   ],
   "host_permissions": [
-    "https://app.mochi.cards/*"
+    "https://app.mochi.cards/*",
+    "https://api.anthropic.com/*"
   ],
   "action": {
     "default_popup": "popup.html",
