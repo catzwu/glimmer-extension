@@ -242,7 +242,7 @@ function updateActivationButton() {
 }
 
 // Create AI flashcards
-document.getElementById("create-cards").addEventListener("click", async () => {
+async function createCards() {
   const button = document.getElementById("create-cards");
   button.disabled = true;
 
@@ -262,8 +262,6 @@ document.getElementById("create-cards").addEventListener("click", async () => {
     }
 
     showStatus("Generating AI flashcards...", "success");
-    const container = document.getElementById("ai-cards-list");
-    const aiCardsContainer = document.getElementById("ai-cards-container");
 
     // Generate flashcards
     aiCards = await generateAIFlashcards(currentHighlights);
@@ -287,7 +285,11 @@ document.getElementById("create-cards").addEventListener("click", async () => {
   } finally {
     button.disabled = false;
   }
-});
+}
+document.getElementById("create-cards").addEventListener("click", createCards);
+document
+  .getElementById("regenerate-cards")
+  .addEventListener("click", createCards);
 
 document
   .getElementById("clear-highlights")
