@@ -258,37 +258,6 @@ button.clear-button {
   margin: 10px 0;
 }
 
-/* Debug section styles */
-#debug-section {
-  margin-top: 20px;
-  border-top: 1px solid var(--border-color);
-  padding-top: 15px;
-}
-
-.debug-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-.debug-content {
-  display: none;
-  background: var(--background-light);
-  padding: 10px;
-  border-radius: 4px;
-  font-family: monospace;
-  font-size: 12px;
-  white-space: pre-wrap;
-  word-break: break-word;
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.debug-content.visible {
-  display: block;
-}
-
 /* Animations */
 @keyframes shake {
 

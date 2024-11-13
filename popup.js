@@ -211,14 +211,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   updateHighlightsList();
 });
 
-// Add debug toggle functionality
-document.getElementById("toggle-debug").addEventListener("click", function() {
-  const debugOutput = document.getElementById("debug-output");
-  const isVisible = debugOutput.classList.contains("visible");
-  debugOutput.classList.toggle("visible");
-  this.textContent = isVisible ? "Show raw output" : "Hide raw output";
-});
-
 // Add activation toggle button event listener
 document
   .getElementById("toggle-activation")
@@ -272,14 +264,9 @@ document.getElementById("create-cards").addEventListener("click", async () => {
     showStatus("Generating AI flashcards...", "success");
     const container = document.getElementById("ai-cards-list");
     const aiCardsContainer = document.getElementById("ai-cards-container");
-    const debugOutput = document.getElementById("debug-output");
 
     // Generate flashcards
-    const { cards, rawOutput } = await generateAIFlashcards(currentHighlights);
-    aiCards = cards;
-
-    // Update debug output
-    debugOutput.textContent = rawOutput;
+    aiCards = await generateAIFlashcards(currentHighlights);
 
     // Store AI cards in content script
     await chrome.tabs.sendMessage(tabs[0].id, {
