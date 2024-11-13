@@ -1,60 +1,103 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mochi Flashcard Creator</title>
-  <link rel="stylesheet" href="popup.css">
-</head>
-<body>
-  <div class="container">
-    <!-- Highlights Section -->
-    <div id="highlights-container">
-      <h3>Current Highlights</h3>
-      <div id="highlights-list">
-        <div class="no-highlights">
-          Select text on the page to create highlights
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mochi Flashcard Creator</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="container">
+      <!-- Activation Toggle -->
+      <div class="activation-section">
+        <button
+          id="toggle-activation"
+          class="activation-toggle"
+          aria-label="Toggle Extension"
+        >
+          On
+        </button>
+        <button
+          id="clear-highlights"
+          class="clear-button"
+          aria-label="Clear Highlights"
+        >
+          Clear all
+        </button>
+      </div>
+
+      <!-- API Key Section -->
+      <div class="api-keys-section">
+        <div class="api-key-input-group">
+          <input
+            type="text"
+            id="mochi-api-key"
+            placeholder="Enter Mochi API Key"
+            aria-label="Mochi API Key"
+          />
+        </div>
+        <div class="api-key-input-group">
+          <input
+            type="text"
+            id="claude-api-key"
+            placeholder="Enter Claude API Key"
+            aria-label="Claude API Key"
+          />
         </div>
       </div>
-    </div>
 
-    <!-- API Key Section -->
-    <div class="api-keys-section">
-      <div class="api-key-input-group">
-        <input 
-          type="text" 
-          id="mochi-api-key" 
-          placeholder="Enter Mochi API Key"
-          aria-label="Mochi API Key"
-        >
+      <!-- Highlights Section -->
+      <div id="highlights-container">
+        <h3>Current Highlights</h3>
+
+        <div id="highlights-list">
+          <div class="no-highlights">
+            Select text on the page to create highlights
+          </div>
+        </div>
+        <button id="create-cards" aria-label="Create Flashcards">
+          Create AI Flashcards
+        </button>
       </div>
-      <div class="api-key-input-group">
-        <input 
-          type="text" 
-          id="claude-api-key" 
-          placeholder="Enter Claude API Key"
-          aria-label="Claude API Key"
-        >
+
+      <!-- Flashcards Section -->
+      <div id="ai-cards-container">
+        <div class="aicards-header">
+          <h3>AI-Generated Flashcards</h3>
+          <button
+            id="create-cards"
+            class="clear-button"
+            aria-label="Create Flashcards"
+          >
+            Regenerate
+          </button>
+        </div>
+
+        <div id="ai-cards-list">
+          <div class="no-highlights">
+            Select text on the page to create highlights
+          </div>
+        </div>
+        <button id="export-to-mochi" aria-label="Export to Mochi">
+          Export to Mochi
+        </button>
       </div>
+
+      <!-- Debug Section -->
+      <div id="debug-section">
+        <div class="debug-header">
+          <h3>Debug Output</h3>
+          <button id="toggle-debug" class="clear-button" aria-label="Toggle Debug">
+            Show raw output
+          </button>
+        </div>
+        <pre id="debug-output" class="debug-content"></pre>
+      </div>
+
+      <!-- Status Messages -->
+      <div id="status-message" role="status" aria-live="polite"></div>
     </div>
 
-    <!-- Action Buttons -->
-    <div class="actions">
-      <button id="create-cards" aria-label="Create Flashcards">
-        Create AI Flashcards
-      </button>
-      <button id="export-to-mochi" aria-label="Export to Mochi">
-        Export to Mochi
-      </button>
-      <button id="clear-highlights" aria-label="Clear Highlights">
-        Clear Highlights
-      </button>
-    </div>
-
-    <!-- Status Messages -->
-    <div id="status-message" role="status" aria-live="polite"></div>
-  </div>
-
-  <script src="popup.js" type="module"></script>
-</body>
+    <script src="popup.js" type="module"></script>
+  </body>
 </html>

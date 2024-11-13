@@ -1,6 +1,7 @@
 // Initialize highlights array
 let highlights = [];
 let aiCards = [];
+let isExtensionActivated = false;
 console.log("Mochi Flashcard Creator: Content script loaded");
 
 function createHighlight(selection) {
@@ -33,7 +34,11 @@ function createHighlight(selection) {
       }
 
       // Only highlight if we have a valid range
-      if (startOffset < endOffset && startOffset >= 0 && endOffset <= node.length) {
+      if (
+        startOffset < endOffset &&
+        startOffset >= 0 &&
+        endOffset <= node.length
+      ) {
         try {
           nodeRange.setStart(node, startOffset);
           nodeRange.setEnd(node, endOffset);
@@ -54,7 +59,9 @@ function createHighlight(selection) {
     const highlight = {
       id: highlightId,
       text: highlightedText,
-      context: getContext(document.querySelector(`[data-highlight-id="${highlightId}"]`)),
+      context: getContext(
+        document.querySelector(`[data-highlight-id="${highlightId}"]`)
+      ),
       url: window.location.href,
       title: document.title,
     };
@@ -97,7 +104,7 @@ function getTextNodesInRange(range) {
   while ((node = walker.nextNode())) {
     const nodeRange = document.createRange();
     nodeRange.selectNodeContents(node);
-    
+
     if (
       range.compareBoundaryPoints(Range.START_TO_END, nodeRange) < 0 &&
       range.compareBoundaryPoints(Range.END_TO_START, nodeRange) > 0
@@ -110,7 +117,10 @@ function getTextNodesInRange(range) {
   if (range.startContainer.nodeType === Node.TEXT_NODE) {
     textNodes.unshift(range.startContainer);
   }
-  if (range.endContainer.nodeType === Node.TEXT_NODE && range.endContainer !== range.startContainer) {
+  if (
+    range.endContainer.nodeType === Node.TEXT_NODE &&
+    range.endContainer !== range.startContainer
+  ) {
     textNodes.push(range.endContainer);
   }
 
@@ -123,7 +133,8 @@ function isNodeInRange(node, range) {
 
   const isAfterStart =
     range.compareBoundaryPoints(Range.START_TO_START, nodeRange) <= 0;
-  const isBeforeEnd = range.compareBoundaryPoints(Range.END_TO_END, nodeRange) >= 0;
+  const isBeforeEnd =
+    range.compareBoundaryPoints(Range.END_TO_END, nodeRange) >= 0;
 
   return isAfterStart && isBeforeEnd;
 }
@@ -172,22 +183,27 @@ function showHighlightFeedback(x, y) {
   feedback.className = "mochi-highlight-feedback";
   feedback.style.top = `${y + 10}px`;
   feedback.style.left = `${x + 10}px`;
-  
+
   document.body.appendChild(feedback);
   setTimeout(() => feedback.remove(), 1500);
 }
 
 function removeHighlight(highlightId) {
-  const highlightElement = document.querySelector(`[data-highlight-id="${highlightId}"]`);
+  const highlightElement = document.querySelector(
+    `[data-highlight-id="${highlightId}"]`
+  );
   if (highlightElement) {
     const parent = highlightElement.parentNode;
-    parent.replaceChild(document.createTextNode(highlightElement.textContent), highlightElement);
-    highlights = highlights.filter(h => h.id !== highlightId);
-    
+    parent.replaceChild(
+      document.createTextNode(highlightElement.textContent),
+      highlightElement
+    );
+    highlights = highlights.filter((h) => h.id !== highlightId);
+
     // Notify popup of removed highlight
     chrome.runtime.sendMessage({
       action: "removeHighlight",
-      highlightId: highlightId
+      highlightId: highlightId,
     });
   }
 }
@@ -197,7 +213,9 @@ document.addEventListener("mouseup", function (e) {
   const selection = window.getSelection();
   if (!selection || !selection.toString().trim()) return;
 
-  // Only proceed if we're not clicking inside the extension popup
+  // Only proceed if extension is activated and we're not clicking inside the extension popup
+  if (!isExtensionActivated) return;
+
   if (e.target.closest(".mochi-highlight-selection")) return;
 
   if (createHighlight(selection)) {
@@ -205,7 +223,7 @@ document.addEventListener("mouseup", function (e) {
   }
 });
 
-document.addEventListener("click", function(e) {
+document.addEventListener("click", function (e) {
   const highlightElement = e.target.closest(".mochi-highlight-selection");
   if (highlightElement) {
     removeHighlight(highlightElement.dataset.highlightId);
@@ -216,6 +234,12 @@ document.addEventListener("click", function(e) {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "ping") {
     sendResponse(true);
+  } else if (request.action === "activate") {
+    isExtensionActivated = true;
+    sendResponse({ success: true });
+  } else if (request.action === "deactivate") {
+    isExtensionActivated = false;
+    sendResponse({ success: true });
   } else if (request.action === "getHighlights") {
     sendResponse({ highlights, aiCards });
   } else if (request.action === "clearHighlights") {

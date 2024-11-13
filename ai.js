@@ -5,7 +5,7 @@ let hasClaudeKey = false;
  * Generates a flashcard using Claude API
  * @param {string} text - The highlighted text
  * @param {string} context - The surrounding context
- * @returns {Promise<{front: string, back: string}>} - The generated flashcard
+ * @returns {Promise<{cards: Array<string>, output: string}>} - The generated flashcard and raw output
  */
 async function generateFlashcard(text, context) {
   const claudeKey = document.getElementById("claude-api-key").value;
@@ -16,7 +16,7 @@ async function generateFlashcard(text, context) {
   }
 
   const prompt =
-    'Transform the provided text into atomic flashcards that optimize learning through spaced repetition. Each flashcard should:\nFront Side Requirements\n\nAsk a single, specific question\nFocus on understanding rather than pure memorization\nUse clear, unambiguous language\nWhen appropriate, include relevant context without giving away the answer\nFor concepts requiring computation or problem-solving, ask for the process rather than just the result\n\nBack Side Requirements\nProvide a concise, focused answer that fully addresses the question, ideally no more than 10-15 words\nFor problem-solving questions, show the key steps in the solution\n\nFormatting Rules\nFor each flashcard, output in this format:\nQuestion\n---\nAnswer\n#Relevant topic tags for organization\nNote: [Optional - Any special study tips or mnemonics]\nProcessing Instructions\nWhen converting text into flashcards:\n\nBreak down complex ideas into multiple atomic cards\n\nEach card should test one specific fact or concept\nAvoid compound questions\nCreate separate cards for related but distinct ideas\n\n\nApply these transformation rules:\n\nConvert statements into questions that promote active recall\nRephrase to eliminate textbook-style language and shorten where possible\nRemove redundant questions or information\nAdd context when the original text assumes background knowledge\nCreate bidirectional cards for important relationships (A→B and B→A)\n\nApply these quality checks:\n\nDoes the card test understanding rather than recognition?\nIs the question clear without seeing the answer?\nCould someone familiar with the subject verify the answer\'s correctness?\nIs the card\'s scope appropriate (neither too broad nor too narrow)?\n\n\nExamples\nHere are three example transformations:\nOriginal text: "The mitochondria is the powerhouse of the cell, producing ATP through cellular respiration."\nBad card:\nWhat is the mitochondria?\n---\nThe powerhouse of the cell that produces ATP through cellular respiration.\nGood cards:\nThrough what process do mitochondria produce ATP?\n---\nCellular respiration\n#biology, #cellular-processes\n\nWhy are mitochondria often called the "powerhouse" of the cell?\n---\nThey produce ATP (energy) through cellular respiration, which powers most cellular processes\n#biology, #cellular-processes\nNote: Think of mitochondria as tiny power plants inside each cell\n\nOutput Format\nGenerate the flashcards in this structure:\n\nFirst, list all created flashcards in the specified format. Separate cards with *****.\nDo not say anything besides text that will appear in the flashcards\n\n\nQuality Guidelines\nEach flashcard must:\n\nFollow the minimum information principle (one fact per card)\nBe clear and unambiguous\nUse few words\nFocus on understanding over memorization\nBe self-contained (understand the question without external reference)\nAvoid sets/enumerations (break into individual cards)';
+    'Transform the provided text into atomic flashcards that optimize learning through spaced repetition. Each flashcard should:\\nFront Side Requirements\\n\\nAsk a single, specific question\\nFocus on understanding rather than pure memorization\\nUse clear, unambiguous language\\nWhen appropriate, include relevant context without giving away the answer\\nFor concepts requiring computation or problem-solving, ask for the process rather than just the result\\n\\nBack Side Requirements\\nProvide a concise, focused answer that fully addresses the question, ideally no more than 10-15 words\\nFor problem-solving questions, show the key steps in the solution\\n\\nFormatting Rules\\nFor each flashcard, output in this format:\\nQuestion\\n---\\nAnswer\\n#Relevant topic tags for organization\\nNote: [Optional - Any special study tips or mnemonics]\\nProcessing Instructions\\nWhen converting text into flashcards:\\n\\nBreak down complex ideas into multiple atomic cards\\n\\nEach card should test one specific fact or concept\\nAvoid compound questions\\nCreate separate cards for related but distinct ideas\\n\\n\\nApply these transformation rules:\\n\\nConvert statements into questions that promote active recall\\nRephrase to eliminate textbook-style language and shorten where possible\\nRemove redundant questions or information\\nAdd context when the original text assumes background knowledge\\nCreate bidirectional cards for important relationships (A→B and B→A)\\n\\nApply these quality checks:\\n\\nDoes the card test understanding rather than recognition?\\nIs the question clear without seeing the answer?\\nCould someone familiar with the subject verify the answer\\'s correctness?\\nIs the card\\'s scope appropriate (neither too broad nor too narrow)?\\n\\n\\nExamples\\nHere are three example transformations:\\nOriginal text: \"The mitochondria is the powerhouse of the cell, producing ATP through cellular respiration.\"\\nBad card:\\nWhat is the mitochondria?\\n---\\nThe powerhouse of the cell that produces ATP through cellular respiration.\\nGood cards:\\nThrough what process do mitochondria produce ATP?\\n---\\nCellular respiration\\n#biology, #cellular-processes\\n\\nWhy are mitochondria often called the \"powerhouse\" of the cell?\\n---\\nThey produce ATP (energy) through cellular respiration, which powers most cellular processes\\n#biology, #cellular-processes\\nNote: Think of mitochondria as tiny power plants inside each cell\\n\\nOutput Format\\nGenerate the flashcards in this structure:\\n\\nFirst, list all created flashcards in the specified format. Separate cards with *****.\\nDo not say anything besides text that will appear in the flashcards\\n\\n\\nQuality Guidelines\\nEach flashcard must:\\n\\nFollow the minimum information principle (one fact per card)\\nBe clear and unambiguous\\nUse few words\\nFocus on understanding over memorization\\nBe self-contained (understand the question without external reference)\\nAvoid sets/enumerations (break into individual cards)';
 
   const header = {
     "Content-Type": "application/json",
@@ -52,7 +52,7 @@ async function generateFlashcard(text, context) {
   const content = data.content[0].text;
 
   const cards = content.split("*****");
-  return cards;
+  return { cards, output: content };
 }
 
 /**
@@ -115,7 +115,7 @@ async function initAI() {
 /**
  * Generates AI flashcards from highlights
  * @param {Array} highlights - The current highlights
- * @returns {Promise<Array>} - The generated flashcards
+ * @returns {Promise<{cards: Array, rawOutput: string}>} - The generated flashcards and raw AI output
  */
 async function generateAIFlashcards(highlights) {
   // Save Claude API key if provided
@@ -127,12 +127,18 @@ async function generateAIFlashcards(highlights) {
 
   // Generate flashcards for each highlight
   const aiCards = [];
+  let rawOutput = "";
   for (const highlight of highlights) {
-    const cards = await generateFlashcard(highlight.text, highlight.context);
+    const { cards, output } = await generateFlashcard(highlight.text, highlight.context);
     aiCards.push(...cards);
+    rawOutput += "\n\n=== Highlight ===\n";
+    rawOutput += `Text: ${highlight.text}\n`;
+    rawOutput += `Context: ${highlight.context}\n`;
+    rawOutput += "=== AI Output ===\n";
+    rawOutput += output;
   }
 
-  return aiCards;
+  return { cards: aiCards, rawOutput };
 }
 
 export { hasClaudeKey, generateAIFlashcards, createAIFlashcardPreview, initAI };

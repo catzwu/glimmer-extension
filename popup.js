@@ -9,6 +9,7 @@ import {
 let currentHighlights = [];
 let aiCards = [];
 let hasApiKey = false;
+let isExtensionActivated = false;
 
 /**
  * Helper Functions
@@ -66,14 +67,14 @@ async function removeCard(index) {
   try {
     // Remove card from array
     aiCards.splice(index, 1);
-    
+
     // Update content script
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     await chrome.tabs.sendMessage(tabs[0].id, {
       action: "setAICards",
       cards: aiCards,
     });
-    
+
     // Update display
     updateHighlightsList();
     showStatus("Card removed", "success");
@@ -101,13 +102,20 @@ async function updateHighlightsList() {
     if (response) {
       currentHighlights = response.highlights;
       aiCards = response.aiCards;
-      
+
       const container = document.getElementById("highlights-list");
+      const createCardsButton = document.getElementById("create-cards");
+      const aiCardsContainer = document.getElementById("ai-cards-container");
+      const aiCardsList = document.getElementById("ai-cards-list");
+
+      // Handle create cards button visibility and state
+      createCardsButton.style.display = aiCards.length > 0 ? "none" : "block";
+      createCardsButton.disabled = currentHighlights.length === 0;
 
       // First show highlights
       container.innerHTML = currentHighlights.length
         ? ""
-        : '<div class="no-highlights">No highlights yet. Select text on the page to create highlights.</div>';
+        : '<div class="no-highlights">Select text on the page to create highlights</div>';
 
       currentHighlights.forEach((highlight) => {
         const div = document.createElement("div");
@@ -128,14 +136,15 @@ async function updateHighlightsList() {
         container.appendChild(div);
       });
 
-      // Then show AI cards if we have them
+      // Handle AI cards visibility and content
+      aiCardsContainer.style.display = aiCards.length > 0 ? "block" : "none";
       if (aiCards.length > 0) {
-        const cardsContainer = document.createElement('div');
-        cardsContainer.innerHTML = "<h3>AI-Generated Flashcard Previews</h3>";
+        aiCardsList.innerHTML = "";
         aiCards.forEach((card, index) => {
-          cardsContainer.appendChild(createAIFlashcardPreview(card, index, removeCard));
+          aiCardsList.appendChild(
+            createAIFlashcardPreview(card, index, removeCard)
+          );
         });
-        container.appendChild(cardsContainer);
       }
     }
   } catch (error) {
@@ -166,11 +175,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 document.addEventListener("DOMContentLoaded", async () => {
   // Load API keys
-  const result = await chrome.storage.local.get(["mochiApiKey"]);
+  const result = await chrome.storage.local.get([
+    "mochiApiKey",
+    "extensionActivated",
+  ]);
   if (result.mochiApiKey) {
     document.getElementById("mochi-api-key").value = result.mochiApiKey;
     hasApiKey = true;
   }
+
+  isExtensionActivated = result.extensionActivated || false;
+  updateActivationButton();
 
   // Initialize AI functionality
   await initAI();
@@ -186,10 +201,53 @@ document.addEventListener("DOMContentLoaded", async () => {
         .forEach((button) => (button.disabled = true));
       return;
     }
+
+    // Send activation state to content script
+    if (isExtensionActivated) {
+      await chrome.tabs.sendMessage(tabs[0].id, { action: "activate" });
+    }
   }
 
   updateHighlightsList();
 });
+
+// Add debug toggle functionality
+document.getElementById("toggle-debug").addEventListener("click", function() {
+  const debugOutput = document.getElementById("debug-output");
+  const isVisible = debugOutput.classList.contains("visible");
+  debugOutput.classList.toggle("visible");
+  this.textContent = isVisible ? "Show raw output" : "Hide raw output";
+});
+
+// Add activation toggle button event listener
+document
+  .getElementById("toggle-activation")
+  .addEventListener("click", async () => {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tabs.length === 0) return;
+
+    isExtensionActivated = !isExtensionActivated;
+    await chrome.storage.local.set({
+      extensionActivated: isExtensionActivated,
+    });
+
+    // Send activation state to content script
+    await chrome.tabs.sendMessage(tabs[0].id, {
+      action: isExtensionActivated ? "activate" : "deactivate",
+    });
+
+    updateActivationButton();
+    showStatus(
+      isExtensionActivated ? "Extension activated" : "Extension deactivated",
+      "success"
+    );
+  });
+
+function updateActivationButton() {
+  const button = document.getElementById("toggle-activation");
+  button.textContent = isExtensionActivated ? "On" : "Off";
+  button.classList.toggle("activated", isExtensionActivated);
+}
 
 // Create AI flashcards
 document.getElementById("create-cards").addEventListener("click", async () => {
@@ -212,11 +270,16 @@ document.getElementById("create-cards").addEventListener("click", async () => {
     }
 
     showStatus("Generating AI flashcards...", "success");
-    const container = document.getElementById("highlights-list");
-    container.innerHTML = "<h3>AI-Generated Flashcard Previews</h3>";
+    const container = document.getElementById("ai-cards-list");
+    const aiCardsContainer = document.getElementById("ai-cards-container");
+    const debugOutput = document.getElementById("debug-output");
 
     // Generate flashcards
-    aiCards = await generateAIFlashcards(currentHighlights);
+    const { cards, rawOutput } = await generateAIFlashcards(currentHighlights);
+    aiCards = cards;
+
+    // Update debug output
+    debugOutput.textContent = rawOutput;
 
     // Store AI cards in content script
     await chrome.tabs.sendMessage(tabs[0].id, {
@@ -224,9 +287,7 @@ document.getElementById("create-cards").addEventListener("click", async () => {
       cards: aiCards,
     });
 
-    aiCards.forEach((card, index) => {
-      container.appendChild(createAIFlashcardPreview(card, index, removeCard));
-    });
+    updateHighlightsList();
 
     showStatus(
       'AI Flashcards created! Click "Export to Mochi" to save them.',

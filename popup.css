@@ -116,6 +116,47 @@ button.error {
   border-left: 4px solid var(--success-color);
 }
 
+.aicards-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.activation-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+/* Activation toggle styles */
+.activation-toggle {
+  background-color: var(--error-color);
+  transition: background-color 0.3s ease;
+  max-width: 80px;
+}
+
+.activation-toggle.activated {
+  background-color: var(--success-color);
+}
+
+button.clear-button {
+  background-color: transparent;
+  text-decoration: underline;
+  color: var(--text-secondary);
+  font-size: 0.9em;
+  border: none;
+  width: fit-content;
+
+  padding: 4px;
+
+  &:hover {
+    color: var(--text-primary);
+  }
+
+}
+
 /* Flashcard preview styles */
 .flashcard-preview {
   background: white;
@@ -217,9 +258,50 @@ button.error {
   margin: 10px 0;
 }
 
+/* Debug section styles */
+#debug-section {
+  margin-top: 20px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 15px;
+}
+
+.debug-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.debug-content {
+  display: none;
+  background: var(--background-light);
+  padding: 10px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.debug-content.visible {
+  display: block;
+}
+
 /* Animations */
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-5px);
+  }
+
+  75% {
+    transform: translateX(5px);
+  }
 }
