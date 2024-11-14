@@ -3,23 +3,14 @@ import React from "react";
 import { useExtension } from "../contexts/ExtensionContext";
 
 const HighlightsList: React.FC = () => {
-  const { highlights, clearHighlights } = useExtension();
+  const { highlights } = useExtension();
 
   return (
-    <div className="bg-gray-100 p-4 rounded-lg">
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="text-lg font-semibold">Current Highlights</h3>
-        {highlights.length > 0 && (
-          <button
-            onClick={clearHighlights}
-            className="text-red-500 hover:text-red-700 text-sm"
-          >
-            Clear All
-          </button>
-        )}
-      </div>
+    <div className="">
+      <h3 className="text-lg font-semibold mb-2">Current Highlights</h3>
+
       {highlights.length === 0 ? (
-        <p className="text-gray-500 italic">
+        <p className="text-gray-500 italic bg-gray-100 p-4 rounded-lg">
           Select text on the page to create highlights
         </p>
       ) : (

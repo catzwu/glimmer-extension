@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --primary-color: #4CAF50;
   --primary-hover: #45a049;
@@ -116,46 +120,6 @@ button.error {
   border-left: 4px solid var(--success-color);
 }
 
-.aicards-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-.header-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-/* Activation toggle styles */
-.activation-toggle {
-  background-color: var(--error-color);
-  transition: background-color 0.3s ease;
-  max-width: 80px;
-}
-
-.activation-toggle.activated {
-  background-color: var(--success-color);
-}
-
-button.clear-button {
-  background-color: transparent;
-  text-decoration: underline;
-  color: var(--text-secondary);
-  font-size: 0.9em;
-  border: none;
-  width: fit-content;
-  padding: 4px;
-  transition: color 0.2s;
-
-  &:hover {
-    color: var(--text-primary);
-  }
-
-}
 
 /* Flashcard preview styles */
 .flashcard-preview {

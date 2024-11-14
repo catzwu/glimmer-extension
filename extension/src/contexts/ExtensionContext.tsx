@@ -1,12 +1,11 @@
-import React, { createContext, useState, useContext } from "react";
+import React, { createContext, useState, useContext, useEffect } from "react";
 
 interface ExtensionContextType {
   isActivated: boolean;
   highlights: string[];
   aiCards: string[];
   toggleActivation: () => void;
-  addHighlight: (highlight: string) => void;
-  clearHighlights: () => void;
+  clearAll: () => void;
   setAICards: (cards: string[]) => void;
 }
 
@@ -21,10 +20,38 @@ export const ExtensionProvider: React.FC<{ children: React.ReactNode }> = ({
   const [highlights, setHighlights] = useState<string[]>([]);
   const [aiCards, setAICards] = useState<string[]>([]);
 
-  const toggleActivation = () => setIsActivated(!isActivated);
-  const addHighlight = (highlight: string) =>
-    setHighlights((prev) => [...prev, highlight]);
-  const clearHighlights = () => setHighlights([]);
+  useEffect(() => {
+    // Listen for highlights from content script
+    const handleHighlightsUpdate = (message: any) => {
+      switch (message.type) {
+        case "ADD_HIGHLIGHT":
+          const newHighlights = [...highlights, message.text];
+          setHighlights(newHighlights);
+          break;
+
+        case "CLEAR_HIGHLIGHTS":
+          setHighlights([]);
+          break;
+      }
+    };
+
+    chrome.runtime.onMessage.addListener(handleHighlightsUpdate);
+
+    return () => {
+      chrome.runtime.onMessage.removeListener(handleHighlightsUpdate);
+    };
+  }, []);
+
+  const toggleActivation = () => {
+    chrome.runtime.sendMessage({ type: "TOGGLE_ACTIVATION" });
+    setIsActivated((prev) => !prev);
+  };
+
+  const clearAll = () => {
+    chrome.runtime.sendMessage({ type: "CLEAR_HIGHLIGHTS" });
+    setHighlights([]);
+    setAICards([]);
+  };
 
   return (
     <ExtensionContext.Provider
@@ -33,8 +60,7 @@ export const ExtensionProvider: React.FC<{ children: React.ReactNode }> = ({
         highlights,
         aiCards,
         toggleActivation,
-        addHighlight,
-        clearHighlights,
+        clearAll,
         setAICards: (cards) => setAICards(cards),
       }}
     >

@@ -7,7 +7,7 @@ interface AICardGeneratorProps {
 }
 
 const AICardGenerator: React.FC<AICardGeneratorProps> = ({ showStatus }) => {
-  const { highlights, setAICards } = useExtension();
+  const { highlights, setAICards, aiCards } = useExtension();
   const [isGenerating, setIsGenerating] = useState(false);
 
   const generateFlashcards = async () => {
@@ -33,9 +33,9 @@ const AICardGenerator: React.FC<AICardGeneratorProps> = ({ showStatus }) => {
     }
   };
 
-  return (
-    <div className="bg-white p-4 rounded-lg shadow-md">
-      <h3 className="text-lg font-semibold mb-4">AI Flashcard Generator</h3>
+  if (highlights.length === 0) return null;
+  if (aiCards.length === 0)
+    return (
       <button
         onClick={generateFlashcards}
         disabled={isGenerating || highlights.length === 0}
@@ -45,8 +45,13 @@ const AICardGenerator: React.FC<AICardGeneratorProps> = ({ showStatus }) => {
             : "bg-blue-500 text-white hover:bg-blue-600"
         }`}
       >
-        {isGenerating ? "Generating..." : "Generate Flashcards"}
+        {isGenerating ? "Generating..." : "Generate AI Flashcards"}
       </button>
+    );
+
+  return (
+    <div className="bg-white p-4 rounded-lg shadow-md">
+      <h3 className="text-lg font-semibold mb-4">AI Flashcard Generator</h3>
     </div>
   );
 };

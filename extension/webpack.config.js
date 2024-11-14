@@ -5,6 +5,7 @@ const CopyPlugin = require("copy-webpack-plugin");
 module.exports = {
   entry: {
     index: "./src/index.tsx",
+    content: "./src/content.ts",
   },
   mode: "production",
   module: {
@@ -24,7 +25,7 @@ module.exports = {
       {
         exclude: /node_modules/,
         test: /\.css$/i,
-        use: ["style-loader", "css-loader"],
+        use: ["style-loader", "css-loader", "postcss-loader"],
       },
     ],
   },
@@ -38,7 +39,7 @@ module.exports = {
     extensions: [".tsx", ".ts", ".js"],
   },
   output: {
-    path: path.join(__dirname, "dist/js"),
+    path: path.join(__dirname, "dist"),
     filename: "[name].js",
   },
 };

@@ -1,0 +1,1 @@
+(()=>{"use strict";chrome.runtime.onMessage.addListener((function(e,t,n){"TOGGLE_ACTIVATION"===e.type&&chrome.tabs.query({},(function(t){t.forEach((function(t){t.id&&chrome.tabs.sendMessage(t.id,{type:"EXTENSION_STATE",isActive:e.isActive})}))}))})),document.addEventListener("mouseup",(function(){}))})();

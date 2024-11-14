@@ -5,6 +5,7 @@ import AICardGenerator from "./components/AICardGenerator";
 import MarkdownExporter from "./components/MarkdownExporter";
 import StatusMessage from "./components/StatusMessage";
 import { ExtensionProvider } from "./contexts/ExtensionContext";
+import "./App.css";
 
 const App: React.FC = () => {
   const [statusMessage, setStatusMessage] = useState<string>("");
@@ -21,16 +22,14 @@ const App: React.FC = () => {
 
   return (
     <ExtensionProvider>
-      <div className="w-96 p-4 bg-white">
-        <div className="space-y-4">
-          <ActivationToggle />
-          <HighlightsList />
-          {/* <AICardGenerator showStatus={showStatus} /> */}
-          {/* <MarkdownExporter showStatus={showStatus} /> */}
-          {statusMessage && (
-            <StatusMessage message={statusMessage} type={statusType} />
-          )}
-        </div>
+      <div className="space-y-4">
+        <ActivationToggle />
+        <HighlightsList />
+        <AICardGenerator showStatus={showStatus} />
+        {/* <MarkdownExporter showStatus={showStatus} /> */}
+        {statusMessage && (
+          <StatusMessage message={statusMessage} type={statusType} />
+        )}
       </div>
     </ExtensionProvider>
   );
