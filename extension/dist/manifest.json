@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Mochi Flashcard Creator",
+  "version": "1.0",
+  "description": "Create Anki-style flashcards from webpage highlights and export to Mochi",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://app.mochi.cards/*",
+    "https://api.anthropic.com/*"
+  ],
+  "action": {
+    "default_popup": "js/index.html",
+    "default_icon": {
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  }
+}
