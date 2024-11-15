@@ -1,0 +1,16 @@
+.mochi-highlight-selection {
+  background-color: #ffeb3b !important;
+  cursor: pointer !important;
+}
+
+.mochi-highlight-feedback {
+  position: fixed !important;
+  background: #4CAF50 !important;
+  color: white !important;
+  padding: 8px !important;
+  border-radius: 4px !important;
+  z-index: 10000 !important;
+  font-size: 14px !important;
+  pointer-events: none !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+}

@@ -5,6 +5,7 @@ const CopyPlugin = require("copy-webpack-plugin");
 module.exports = {
   entry: {
     index: "./src/index.tsx",
+    background: "./background.js",
     content: "./src/content.ts",
   },
   mode: "production",
@@ -31,26 +32,24 @@ module.exports = {
   },
   plugins: [
     new CopyPlugin({
-      patterns: [{ from: "manifest.json", to: "../manifest.json" }],
+      patterns: [
+        { from: "manifest.json", to: "manifest.json" },
+        { from: "src/icon48.png", to: "icon48.png" },
+        { from: "src/icon128.png", to: "icon128.png" },
+      ],
     }),
-    ...getHtmlPlugins(["index"]),
+    new HTMLPlugin({
+      template: "./index.html",
+      filename: "index.html",
+      chunks: ["index"],
+    }),
   ],
   resolve: {
     extensions: [".tsx", ".ts", ".js"],
   },
   output: {
-    path: path.join(__dirname, "dist"),
+    path: path.resolve(__dirname, "build"),
     filename: "[name].js",
+    clean: true,
   },
 };
-
-function getHtmlPlugins(chunks) {
-  return chunks.map(
-    (chunk) =>
-      new HTMLPlugin({
-        title: "React extension",
-        filename: `${chunk}.html`,
-        chunks: [chunk],
-      })
-  );
-}
