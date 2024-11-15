@@ -36,6 +36,7 @@ module.exports = {
         { from: "manifest.json", to: "manifest.json" },
         { from: "src/icon48.png", to: "icon48.png" },
         { from: "src/icon128.png", to: "icon128.png" },
+        { from: "src/content.css", to: "content.css" }
       ],
     }),
     new HTMLPlugin({

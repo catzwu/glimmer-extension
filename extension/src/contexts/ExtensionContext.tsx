@@ -1,13 +1,20 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
+import React, { createContext, useState, useEffect, useContext } from "react";
+
+interface Highlight {
+  id: string;
+  text: string;
+  url: string;
+  timestamp: number;
+}
 
 interface ExtensionContextType {
   isActivated: boolean;
-  highlights: string[];
-  aiCards: string[];
-  toggleActivation: () => void;
-  clearAll: () => void;
-  setAICards: (cards: string[]) => void;
-  addHighlight: (text: string) => void;
+  highlights: Highlight[];
+  cards: string[];
+  toggleActivation: () => Promise<void>;
+  clearHighlights: () => void;
+  clearCards: () => void;
+  addCards: (cards: string[]) => void;
 }
 
 const ExtensionContext = createContext<ExtensionContextType | undefined>(
@@ -18,11 +25,11 @@ export const ExtensionProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [isActivated, setIsActivated] = useState(true);
-  const [highlights, setHighlights] = useState<string[]>([]);
-  const [aiCards, setAICards] = useState<string[]>([]);
+  const [highlights, setHighlights] = useState<Highlight[]>([]);
+  const [cards, setCards] = useState<string[]>([]);
 
   useEffect(() => {
-    // Get initial extension state
+    // Get initial state
     chrome.runtime.sendMessage({ type: "GET_EXTENSION_STATE" }, (response) => {
       if (chrome.runtime.lastError) {
         console.error(
@@ -33,26 +40,23 @@ export const ExtensionProvider: React.FC<{ children: React.ReactNode }> = ({
       }
       if (response) {
         setIsActivated(response.isActive);
+        setHighlights(response.highlights || []);
+        setCards(response.cards || []);
       }
     });
 
-    // Listen for messages from content script or background
+    // Listen for messages
     const handleMessage = (
       message: any,
       sender: chrome.runtime.MessageSender
     ) => {
+      console.log("Received message:", message.type, "from:", sender.id);
+
       try {
         switch (message.type) {
-          case "ADD_HIGHLIGHT":
-            if (typeof message.text !== "string") {
-              console.error("Invalid highlight text:", message.text);
-              return;
-            }
-            setHighlights((prev) => [...prev, message.text]);
-            break;
-
-          case "CLEAR_HIGHLIGHTS":
-            setHighlights([]);
+          case "HIGHLIGHTS_UPDATED":
+            console.log("Updating highlights:", message.highlights);
+            setHighlights(message.highlights);
             break;
 
           case "EXTENSION_STATE":
@@ -65,15 +69,11 @@ export const ExtensionProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     chrome.runtime.onMessage.addListener(handleMessage);
-
-    return () => {
-      chrome.runtime.onMessage.removeListener(handleMessage);
-    };
+    return () => chrome.runtime.onMessage.removeListener(handleMessage);
   }, []);
 
   const toggleActivation = async () => {
     try {
-      // Get the current tab
       console.log("Toggling activation...");
       const [tab] = await chrome.tabs.query({
         active: true,
@@ -81,44 +81,46 @@ export const ExtensionProvider: React.FC<{ children: React.ReactNode }> = ({
       });
       if (!tab?.id) return;
 
-      // Update the state locally first
       const newState = !isActivated;
       setIsActivated(newState);
 
-      // Send message to background script
       chrome.runtime.sendMessage({
         type: "TOGGLE_ACTIVATION",
         isActive: newState,
       });
-      console.log("Toggled activation:", newState);
-      // Try to send message to content script
-      try {
-        console.log("Sending message to content script...", tab.id);
-        await chrome.tabs.sendMessage(tab.id, {
-          type: "EXTENSION_STATE",
-          isActive: newState,
-        });
-      } catch (error) {
-        console.log("Content script not ready in current tab");
-      }
     } catch (error) {
       console.error("Error toggling activation:", error);
     }
   };
 
-  const clearAll = () => {
-    try {
-      chrome.runtime.sendMessage({ type: "CLEAR_HIGHLIGHTS" });
+  const clearHighlights = () => {
+    chrome.runtime.sendMessage({ type: "CLEAR_HIGHLIGHTS" }, () => {
       setHighlights([]);
-      setAICards([]);
-    } catch (error) {
-      console.error("Error clearing highlights:", error);
-    }
+    });
   };
 
-  const addHighlight = (text: string) => {
-    if (!text.trim()) return;
-    setHighlights((prev) => [...prev, text]);
+  const clearCards = () => {
+    chrome.runtime.sendMessage({ type: "CLEAR_CARDS" }, () => {
+      setCards([]);
+    });
+  };
+
+  const addCards = (cards: string[]) => {
+    chrome.runtime.sendMessage(
+      {
+        type: "ADD_CARDS",
+        cards,
+      },
+      (response) => {
+        if (response?.success) {
+          chrome.runtime.sendMessage({ type: "GET_CARDS" }, (response) => {
+            if (response?.cards) {
+              setCards(response.cards);
+            }
+          });
+        }
+      }
+    );
   };
 
   return (
@@ -126,11 +128,11 @@ export const ExtensionProvider: React.FC<{ children: React.ReactNode }> = ({
       value={{
         isActivated,
         highlights,
-        aiCards,
+        cards,
         toggleActivation,
-        clearAll,
-        setAICards: (cards) => setAICards(cards),
-        addHighlight,
+        clearHighlights,
+        clearCards,
+        addCards,
       }}
     >
       {children}

@@ -200,9 +200,8 @@ button.error {
   width: auto;
   cursor: pointer;
   opacity: 0.6;
-  font-size: 18px;
   line-height: 1;
-  transition: opacity 0.2s;
+  transition: opacity color 0.2s;
 }
 
 .delete-highlight:hover {

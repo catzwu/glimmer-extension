@@ -7,7 +7,7 @@ interface MarkdownExporterProps {
 }
 
 const MarkdownExporter: React.FC<MarkdownExporterProps> = ({ showStatus }) => {
-  const { highlights, aiCards } = useExtension();
+  const { highlights, cards } = useExtension();
   const [template, setTemplate] = useState(`## Highlights and Flashcards
 
 ### Highlights
@@ -17,7 +17,7 @@ const MarkdownExporter: React.FC<MarkdownExporterProps> = ({ showStatus }) => {
 {{flashcards}}`);
 
   const exportToMarkdown = async () => {
-    if (highlights.length === 0 || aiCards.length === 0) {
+    if (highlights.length === 0 || cards.length === 0) {
       showStatus("No highlights or flashcards to export", "error");
       return;
     }
@@ -25,10 +25,10 @@ const MarkdownExporter: React.FC<MarkdownExporterProps> = ({ showStatus }) => {
     try {
       // Format highlights and flashcards
       const highlightsText = highlights
-        .map((highlight) => `- ${highlight}`)
+        .map((highlight) => `- ${highlight.text}`)
         .join("\n");
 
-      const flashcardsText = aiCards
+      const flashcardsText = cards
         .map((card) => {
           const [question, answer] = card.split("---");
           return `**${question.trim()}**\n${answer.trim()}`;
@@ -73,9 +73,9 @@ const MarkdownExporter: React.FC<MarkdownExporterProps> = ({ showStatus }) => {
       />
       <button
         onClick={exportToMarkdown}
-        disabled={highlights.length === 0 || aiCards.length === 0}
+        disabled={highlights.length === 0 || cards.length === 0}
         className={`w-full py-2 rounded ${
-          highlights.length === 0 || aiCards.length === 0
+          highlights.length === 0 || cards.length === 0
             ? "bg-gray-300 cursor-not-allowed"
             : "bg-green-500 text-white hover:bg-green-600"
         }`}

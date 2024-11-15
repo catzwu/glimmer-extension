@@ -1,4 +1,3 @@
-// file:///Users/catherinewu/CascadeProjects/windsurf-project/extension/src/component/HighlightsList.tsx
 import React from "react";
 import { useExtension } from "../contexts/ExtensionContext";
 
@@ -15,9 +14,21 @@ const HighlightsList: React.FC = () => {
         </p>
       ) : (
         <ul className="space-y-2">
-          {highlights.map((highlight, index) => (
-            <li key={index} className="bg-white p-2 rounded shadow-sm text-sm">
-              {highlight}
+          {highlights.map((highlight) => (
+            <li key={highlight.id} className="highlight-item">
+              <div className="highlight-text">{highlight.text}</div>
+              <button
+                className="delete-highlight"
+                onClick={() => {
+                  chrome.runtime.sendMessage({
+                    type: "REMOVE_HIGHLIGHT",
+                    id: highlight.id,
+                  });
+                }}
+                aria-label="Delete highlight"
+              >
+                x
+              </button>
             </li>
           ))}
         </ul>

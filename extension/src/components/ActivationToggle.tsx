@@ -2,7 +2,8 @@ import React from "react";
 import { useExtension } from "../contexts/ExtensionContext";
 
 const ActivationToggle: React.FC = () => {
-  const { isActivated, toggleActivation, clearAll } = useExtension();
+  const { isActivated, toggleActivation, clearCards, clearHighlights } =
+    useExtension();
 
   return (
     <div className="flex justify-between items-center">
@@ -17,7 +18,8 @@ const ActivationToggle: React.FC = () => {
       <button
         className="underline text-gray-500 hover:text-gray-700 text-sm transition-colors duration-200"
         onClick={() => {
-          clearAll();
+          clearCards();
+          clearHighlights();
         }}
       >
         Clear All

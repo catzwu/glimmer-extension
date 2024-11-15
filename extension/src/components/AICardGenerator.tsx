@@ -7,7 +7,7 @@ interface AICardGeneratorProps {
 }
 
 const AICardGenerator: React.FC<AICardGeneratorProps> = ({ showStatus }) => {
-  const { highlights, setAICards, aiCards } = useExtension();
+  const { highlights, addCards, cards } = useExtension();
   const [isGenerating, setIsGenerating] = useState(false);
 
   const generateFlashcards = async () => {
@@ -24,7 +24,7 @@ const AICardGenerator: React.FC<AICardGeneratorProps> = ({ showStatus }) => {
           `What is the key point about "${highlight}"?\n---\nKey insight about the highlight`
       );
 
-      setAICards(mockCards);
+      addCards(mockCards);
       showStatus("Flashcards generated successfully!");
     } catch (error) {
       showStatus("Failed to generate flashcards", "error");
@@ -34,7 +34,7 @@ const AICardGenerator: React.FC<AICardGeneratorProps> = ({ showStatus }) => {
   };
 
   if (highlights.length === 0) return null;
-  if (aiCards.length === 0)
+  if (cards.length === 0)
     return (
       <button
         onClick={generateFlashcards}
