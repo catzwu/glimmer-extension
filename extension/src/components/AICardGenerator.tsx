@@ -21,7 +21,7 @@ const AICardGenerator: React.FC<AICardGeneratorProps> = ({ showStatus }) => {
       // Placeholder for actual AI card generation logic
       const mockCards = highlights.map(
         (highlight) =>
-          `What is the key point about "${highlight}"?\n---\nKey insight about the highlight`
+          `What is the key point about "${highlight.text}"?\n---\nKey insight about the highlight`
       );
 
       addCards(mockCards);
@@ -50,8 +50,41 @@ const AICardGenerator: React.FC<AICardGeneratorProps> = ({ showStatus }) => {
     );
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-md">
-      <h3 className="text-lg font-semibold mb-4">AI Flashcard Generator</h3>
+    <div className="flashcards-container">
+      <div className="flashcards-header">
+        <h3>AI-Generated Flashcards</h3>
+        <button
+          onClick={generateFlashcards}
+          disabled={isGenerating}
+          className="clear-button"
+        >
+          {isGenerating ? "Generating..." : "Regenerate"}
+        </button>
+      </div>
+
+      <div className="flashcards-list">
+        {cards.map((card, index) => (
+          <div key={index} className="flashcard-preview">
+            <div className="card-header">
+              <strong>Card {index + 1}</strong>
+              <button
+                className="delete-highlight"
+                onClick={() => {
+                  chrome.runtime.sendMessage({
+                    type: "REMOVE_CARD",
+                    index,
+                  });
+                }}
+                aria-label="Delete card"
+              >
+                x
+              </button>
+            </div>
+            <p className="card-front">{card.split("---")[0]}</p>
+            <p className="card-back">{card.split("---")[1]}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
