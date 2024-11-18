@@ -29,8 +29,10 @@ const App: React.FC = () => {
         <div className="overflow-y-auto flex-initial space-y-4">
           <HighlightsList />
           <AICardGenerator showStatus={showStatus} />
-          <MochiExporter showStatus={showStatus} />
-          <MarkdownExporter showStatus={showStatus} />
+          <div className="space-y-2">
+            <MochiExporter showStatus={showStatus} />
+            <MarkdownExporter showStatus={showStatus} />
+          </div>
         </div>
 
         {statusMessage && (
