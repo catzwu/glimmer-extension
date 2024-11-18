@@ -3,6 +3,7 @@ import "./App.css";
 import ActivationToggle from "./components/ActivationToggle";
 import AICardGenerator from "./components/AICardGenerator";
 import HighlightsList from "./components/HighlightsList";
+import MarkdownExporter from "./components/MarkdownExporter";
 import MochiExporter from "./components/MochiExporter";
 import StatusMessage from "./components/StatusMessage";
 import { ExtensionProvider } from "./contexts/ExtensionContext";
@@ -29,7 +30,7 @@ const App: React.FC = () => {
           <HighlightsList />
           <AICardGenerator showStatus={showStatus} />
           <MochiExporter showStatus={showStatus} />
-          {/* <MarkdownExporter showStatus={showStatus} /> */}
+          <MarkdownExporter showStatus={showStatus} />
         </div>
 
         {statusMessage && (
