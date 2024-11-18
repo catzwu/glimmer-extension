@@ -59,21 +59,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log("[Background] Using tabId:", tabId);
 
   switch (message.type) {
-    case "GET_CURRENT_TAB_ID":
-      // If the message comes from content script, we already have the tab ID
-      if (sender.tab?.id) {
-        console.log("[Background] Returning current tab ID from sender:", sender.tab.id);
-        sendResponse({ tabId: sender.tab.id });
-        return;
-      }
-      // Otherwise, we need to query for the active tab
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        const currentTabId = tabs[0]?.id;
-        console.log("[Background] Returning current tab ID from query:", currentTabId);
-        sendResponse({ tabId: currentTabId });
-      });
-      return true; // Required for async response
-
     case "TOGGLE_ACTIVATION":
       {
         if (!tabId) {

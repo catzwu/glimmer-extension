@@ -6,22 +6,11 @@ export {};
 console.log('[Content] Content script loaded');
 let isExtensionActive = false;  // Start with inactive state by default
 
-// Function to get current tab ID through background script
-const getCurrentTabId = async (): Promise<number | undefined> => {
-  try {
-    const response = await chrome.runtime.sendMessage({ type: "GET_CURRENT_TAB_ID" });
-    return response.tabId;
-  } catch (error) {
-    console.error('[Content] Error getting current tab ID:', error);
-    return undefined;
-  }
-};
-
 // Function to initialize the content script
 const initialize = async () => {
   try {
     console.log('[Content] Initializing content script');
-    // Get initial state directly without tab ID
+    // Get initial state
     console.log('[Content] Getting initial state');
     const response = await chrome.runtime.sendMessage({ 
       type: "GET_STATE"

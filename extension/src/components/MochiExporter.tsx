@@ -10,6 +10,7 @@ const MochiExporter: React.FC<MochiExporterProps> = ({ showStatus }) => {
   const [mochiApiKey, setMochiApiKey] = useState("");
   const [showApiInput, setShowApiInput] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [currentUrl, setCurrentUrl] = useState<string>("");
 
   useEffect(() => {
     // Load saved API key on mount
@@ -19,6 +20,24 @@ const MochiExporter: React.FC<MochiExporterProps> = ({ showStatus }) => {
         setShowApiInput(false);
       }
     });
+
+    // Get current tab URL
+    const getCurrentTabUrl = async () => {
+      try {
+        const tabs = await chrome.tabs.query({
+          active: true,
+          currentWindow: true,
+        });
+        const url = tabs[0]?.url || "No URL available";
+        console.log("[MochiExporter] Got current tab URL:", url);
+        setCurrentUrl(url);
+      } catch (error) {
+        console.error("[MochiExporter] Error getting current tab URL:", error);
+        setCurrentUrl("Error getting URL");
+      }
+    };
+
+    getCurrentTabUrl();
   }, []);
 
   const exportToMochi = async () => {
@@ -37,8 +56,11 @@ const MochiExporter: React.FC<MochiExporterProps> = ({ showStatus }) => {
 
     try {
       for (const card of cards) {
+        // Append source URL to card content
+        const cardContent = `${card}\n\nSource: ${currentUrl}`;
+        
         const cardData = {
-          content: card,
+          content: cardContent,
           "deck-id": "mMrpYLrT", // Default deck ID
         };
 
@@ -100,14 +122,23 @@ const MochiExporter: React.FC<MochiExporterProps> = ({ showStatus }) => {
             className="w-full p-2 border rounded mb-2"
           />
           <p className="text-sm text-gray-600">
-            Your API key will be saved securely in your browser
+            You can find your API key in your{" "}
+            <a
+              href="https://app.mochi.cards/settings/api"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-500 hover:text-blue-600"
+            >
+              Mochi settings
+            </a>
           </p>
         </div>
       )}
       <button
         onClick={exportToMochi}
-        disabled={isExporting || !mochiApiKey}
-        className="primary-button"
+        disabled={isExporting}
+        className="primary-button w-full"
+        aria-label="Export to Mochi"
       >
         {isExporting ? "Exporting..." : "Export to Mochi"}
       </button>
