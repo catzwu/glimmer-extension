@@ -7,7 +7,7 @@ interface AICardGeneratorProps {
 }
 
 const AICardGenerator: React.FC<AICardGeneratorProps> = ({ showStatus }) => {
-  const { highlights, addCards, cards } = useExtension();
+  const { highlights, addCards, removeCard, cards } = useExtension();
   const [isGenerating, setIsGenerating] = useState(false);
 
   const generateFlashcards = async () => {
@@ -69,12 +69,7 @@ const AICardGenerator: React.FC<AICardGeneratorProps> = ({ showStatus }) => {
               <strong>Card {index + 1}</strong>
               <button
                 className="delete-highlight"
-                onClick={() => {
-                  chrome.runtime.sendMessage({
-                    type: "REMOVE_CARD",
-                    index,
-                  });
-                }}
+                onClick={() => removeCard(index)}
                 aria-label="Delete card"
               >
                 x

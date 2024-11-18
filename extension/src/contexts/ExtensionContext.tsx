@@ -15,6 +15,7 @@ interface ExtensionContextType {
   clearHighlights: () => void;
   clearCards: () => void;
   addCards: (cards: string[]) => void;
+  removeCard: (index: number) => void;
 }
 
 const ExtensionContext = createContext<ExtensionContextType | undefined>(
@@ -124,6 +125,25 @@ export const ExtensionProvider: React.FC<{ children: React.ReactNode }> = ({
     );
   };
 
+  const removeCard = (index: number) => {
+    console.log("Removing card:", index);
+    chrome.runtime.sendMessage(
+      {
+        type: "REMOVE_CARD",
+        index,
+      },
+      (response) => {
+        if (response?.success) {
+          chrome.runtime.sendMessage({ type: "GET_CARDS" }, (response) => {
+            if (response?.cards) {
+              setCards(response.cards);
+            }
+          });
+        }
+      }
+    );
+  };
+
   return (
     <ExtensionContext.Provider
       value={{
@@ -134,6 +154,7 @@ export const ExtensionProvider: React.FC<{ children: React.ReactNode }> = ({
         clearHighlights,
         clearCards,
         addCards,
+        removeCard,
       }}
     >
       {children}

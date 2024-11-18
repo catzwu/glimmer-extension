@@ -125,6 +125,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
       break;
 
+    case "REMOVE_CARD":
+      if (message.index !== undefined) {
+        console.log("Background removing card at index:", message.index);
+        cards.splice(message.index, 1);
+        saveState();
+        sendResponse({ success: true });
+      } else {
+        sendResponse({ error: "Invalid card index" });
+      }
+      break;
+
     case "CLEAR_HIGHLIGHTS":
       highlights = [];
       saveState();
