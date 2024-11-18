@@ -6,7 +6,7 @@ const HighlightsList: React.FC = () => {
 
   return (
     <div className="">
-      <h3 className="text-lg font-semibold mb-2">Current Highlights</h3>
+      <h3 className="h3">Current Highlights</h3>
 
       {highlights.length === 0 ? (
         <p className="text-gray-500 italic bg-gray-100 p-4 rounded-lg">

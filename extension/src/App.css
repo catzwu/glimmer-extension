@@ -20,8 +20,15 @@
 
 /* Container styles */
 .container {
-  width: 300px;
+  width: 360px;
   padding: 15px;
+}
+
+h3 {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+  margin-bottom: 8px;
 }
 
 /* API Keys section */
@@ -99,6 +106,20 @@ button.error {
   animation: shake 0.4s linear;
 }
 
+button.clear-button {
+  color: var(--text-secondary);
+  padding: 8px 16px;
+  text-decoration: underline;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s;
+  font-size: 11px
+}
+
+button.clear-button:hover {
+  color: var(--text-primary);
+}
+
 /* Status message styles */
 #status-message {
   margin-top: 10px;
@@ -122,6 +143,18 @@ button.error {
 
 
 /* Flashcard preview styles */
+.flashcards-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.flashcards-list {
+
+  margin: 10px 0;
+}
+
 .flashcard-preview {
   background: white;
   border: 1px solid var(--border-color);

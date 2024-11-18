@@ -57,7 +57,7 @@ function showHighlightFeedback(x: number, y: number) {
   setTimeout(() => feedback.remove(), 1500);
 }
 
-function createHighlight(range: Range) {
+function createHighlight(range: Range, x: number, y: number) {
   try {
     // Check if range is valid
     if (range.collapsed) {
@@ -86,7 +86,7 @@ function createHighlight(range: Range) {
       });
 
       const rect = span.getBoundingClientRect();
-      showHighlightFeedback(rect.left + window.scrollX, rect.top + window.scrollY - window.innerHeight/2);
+      showHighlightFeedback(x,y);
 
     } catch (e) {
       // If surroundContents fails, try a different approach
@@ -112,7 +112,7 @@ function createHighlight(range: Range) {
       });
 
       const rect = span.getBoundingClientRect();
-      showHighlightFeedback(rect.left + window.scrollX, rect.top + window.scrollY - window.innerHeight/2);
+      showHighlightFeedback(x,y);
     }
   } catch (error) {
     console.error('Error creating text highlight:', error);
@@ -136,7 +136,6 @@ document.addEventListener("mouseup", (e) => {
   // If clicking on an existing highlight, delete it
   if (highlightElement) {
     const highlightId = highlightElement.dataset.highlightId;
-    deleteHighlight(highlightElement);
     console.log('Deleting highlight from webpage:', highlightId);
     chrome.runtime.sendMessage({
       type: "REMOVE_HIGHLIGHT",
@@ -153,7 +152,7 @@ document.addEventListener("mouseup", (e) => {
       try {
       
           const range = selection.getRangeAt(0);
-          createHighlight(range);
+          createHighlight(range, e.clientX, e.clientY);
           selection.removeAllRanges();
 
       } catch (error) {

@@ -23,7 +23,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   switch (message.type) {
     case "TOGGLE_ACTIVATION":
-      isExtensionActive = message.isActive ?? !isExtensionActive;
+      isExtensionActive = message.isActive;
       saveState();
 
       chrome.tabs.query({}, (tabs) => {
@@ -115,8 +115,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       break;
 
     case "ADD_CARDS":
-      if (message.card) {
-        cards = [...cards, ...message.cards];
+      if (message.cards) {
+        console.log("Background adding cards:", message.cards);
+        cards = message.cards;
         saveState();
         sendResponse({ success: true });
       } else {

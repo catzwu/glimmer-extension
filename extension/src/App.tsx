@@ -22,11 +22,15 @@ const App: React.FC = () => {
 
   return (
     <ExtensionProvider>
-      <div className="space-y-4">
+      <div className="space-y-4 flex flex-col max-h-[570px]">
         <ActivationToggle />
-        <HighlightsList />
-        <AICardGenerator showStatus={showStatus} />
-        {/* <MarkdownExporter showStatus={showStatus} /> */}
+
+        <div className="overflow-y-auto flex-initial space-y-4">
+          <HighlightsList />
+          <AICardGenerator showStatus={showStatus} />
+          {/* <MarkdownExporter showStatus={showStatus} /> */}
+        </div>
+
         {statusMessage && (
           <StatusMessage message={statusMessage} type={statusType} />
         )}

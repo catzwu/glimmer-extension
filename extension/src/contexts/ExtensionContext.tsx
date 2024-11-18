@@ -106,6 +106,7 @@ export const ExtensionProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const addCards = (cards: string[]) => {
+    console.log("Extension sending cards:", cards);
     chrome.runtime.sendMessage(
       {
         type: "ADD_CARDS",

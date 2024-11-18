@@ -16,7 +16,7 @@ const ActivationToggle: React.FC = () => {
         {isActivated ? "On" : "Off"}
       </button>
       <button
-        className="underline text-gray-500 hover:text-gray-700 text-sm transition-colors duration-200"
+        className="clear-button"
         onClick={() => {
           clearCards();
           clearHighlights();
