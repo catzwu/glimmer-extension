@@ -1,11 +1,11 @@
 import React, { useState } from "react";
+import "./App.css";
 import ActivationToggle from "./components/ActivationToggle";
-import HighlightsList from "./components/HighlightsList";
 import AICardGenerator from "./components/AICardGenerator";
-import MarkdownExporter from "./components/MarkdownExporter";
+import HighlightsList from "./components/HighlightsList";
+import MochiExporter from "./components/MochiExporter";
 import StatusMessage from "./components/StatusMessage";
 import { ExtensionProvider } from "./contexts/ExtensionContext";
-import "./App.css";
 
 const App: React.FC = () => {
   const [statusMessage, setStatusMessage] = useState<string>("");
@@ -28,6 +28,7 @@ const App: React.FC = () => {
         <div className="overflow-y-auto flex-initial space-y-4">
           <HighlightsList />
           <AICardGenerator showStatus={showStatus} />
+          <MochiExporter showStatus={showStatus} />
           {/* <MarkdownExporter showStatus={showStatus} /> */}
         </div>
 

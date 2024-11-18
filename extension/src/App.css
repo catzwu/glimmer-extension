@@ -87,7 +87,6 @@ button.primary-button {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  margin: 5px;
   width: 100%;
   transition: background-color 0.2s, opacity 0.2s;
 }
