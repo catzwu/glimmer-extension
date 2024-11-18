@@ -3,20 +3,36 @@ import './content.css';
 // Make this a module by adding an export
 export {};
 
-console.log('Content script loaded');
-let isExtensionActive = true;
+console.log('[Content] Content script loaded');
+let isExtensionActive = false;  // Start with inactive state by default
+
+// Function to get current tab ID through background script
+const getCurrentTabId = async (): Promise<number | undefined> => {
+  try {
+    const response = await chrome.runtime.sendMessage({ type: "GET_CURRENT_TAB_ID" });
+    return response.tabId;
+  } catch (error) {
+    console.error('[Content] Error getting current tab ID:', error);
+    return undefined;
+  }
+};
 
 // Function to initialize the content script
 const initialize = async () => {
   try {
-    // Get initial state
-    const response = await chrome.runtime.sendMessage({ type: "GET_EXTENSION_STATE" });
+    console.log('[Content] Initializing content script');
+    // Get initial state directly without tab ID
+    console.log('[Content] Getting initial state');
+    const response = await chrome.runtime.sendMessage({ 
+      type: "GET_STATE"
+    });
+
     if (response) {
       isExtensionActive = response.isActive;
-      console.log('Content script initialized with state:', isExtensionActive);
+      console.log('[Content] Content script initialized with state:', isExtensionActive);
     }
   } catch (error) {
-    console.error('Error initializing content script:', error);
+    console.error('[Content] Error initializing content script:', error);
   }
 };
 
@@ -25,28 +41,31 @@ initialize();
 
 // Listen for messages from the extension
 chrome.runtime.onMessage.addListener((message: any, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => {
-  console.log('Content script received message:', message);
+  console.log('[Content] Received message:', message);
+
   switch (message.type) {
-  case "EXTENSION_STATE":
-    isExtensionActive = message.isActive;
-    console.log('Extension state updated:', isExtensionActive);
-    sendResponse({ received: true });
-    break;
-  case "REMOVE_HIGHLIGHT_CONTENT_SCRIPT":
-    console.log('Removing highlight from popup:', message.id);
-    const element = document.querySelector(`[data-highlight-id="${message.id}"]`);
-    if (!element) {
-      console.error('Cannot find element with highlight id:', message.id);
-      return;
-    }
-    deleteHighlight(element as HTMLElement);
-    sendResponse({ received: true });
-    break;
+    case "ACTIVATION_CHANGED":
+      isExtensionActive = message.isActive;
+      console.log('[Content] Extension activation state updated:', isExtensionActive);
+      sendResponse({ received: true });
+      break;
+
+    case "REMOVE_HIGHLIGHT_CONTENT_SCRIPT":
+      console.log('[Content] Removing highlight from popup:', message);
+      const element = document.querySelector(`[data-highlight-id="${message.id}"]`);
+      if (!element) {
+        console.error('[Content] Cannot find element with highlight id:', message.id);
+        return;
+      }
+      deleteHighlight(element as HTMLElement);
+      sendResponse({ received: true });
+      break;
   }
   return true;
 });
 
 function showHighlightFeedback(x: number, y: number) {
+  console.log('[Content] Showing highlight feedback at position:', { x, y });
   const feedback = document.createElement("div");
   feedback.textContent = "✓ Highlight saved!";
   feedback.className = "mochi-highlight-feedback";
@@ -57,11 +76,12 @@ function showHighlightFeedback(x: number, y: number) {
   setTimeout(() => feedback.remove(), 1500);
 }
 
-function createHighlight(range: Range, x: number, y: number) {
+async function createHighlight(range: Range, x: number, y: number) {
   try {
+    console.log('[Content] Creating highlight');
     // Check if range is valid
     if (range.collapsed) {
-      console.error('Invalid range: Range is collapsed');
+      console.error('[Content] Invalid range: Range is collapsed');
       return;
     }
 
@@ -76,9 +96,8 @@ function createHighlight(range: Range, x: number, y: number) {
       span.dataset.highlightId = highlightId;
       safeRange.surroundContents(span);
       
-      
-
       const selectedText = span.textContent || '';
+      console.log('[Content] Sending ADD_HIGHLIGHT message:', selectedText);
       chrome.runtime.sendMessage({
         type: "ADD_HIGHLIGHT",
         text: selectedText,
@@ -86,11 +105,10 @@ function createHighlight(range: Range, x: number, y: number) {
       });
 
       const rect = span.getBoundingClientRect();
-      showHighlightFeedback(x,y);
+      showHighlightFeedback(x, y);
 
     } catch (e) {
-      // If surroundContents fails, try a different approach
-      console.log('Falling back to alternative highlight method');
+      console.log('[Content] Falling back to alternative highlight method:', e);
       
       // Extract text nodes within the range
       const fragment = safeRange.cloneContents();
@@ -99,12 +117,11 @@ function createHighlight(range: Range, x: number, y: number) {
       span.dataset.highlightId = highlightId;
       span.appendChild(fragment);
       
-      // Clear the range content and insert our highlighted version
       safeRange.deleteContents();
       safeRange.insertNode(span);
       
-
       const selectedText = span.textContent || '';
+      console.log('[Content] Sending ADD_HIGHLIGHT message:', selectedText);
       chrome.runtime.sendMessage({
         type: "ADD_HIGHLIGHT",
         text: selectedText,
@@ -112,10 +129,10 @@ function createHighlight(range: Range, x: number, y: number) {
       });
 
       const rect = span.getBoundingClientRect();
-      showHighlightFeedback(x,y);
+      showHighlightFeedback(x, y);
     }
   } catch (error) {
-    console.error('Error creating text highlight:', error);
+    console.error('[Content] Error creating text highlight:', error);
   }
 }
 
@@ -136,7 +153,7 @@ document.addEventListener("mouseup", (e) => {
   // If clicking on an existing highlight, delete it
   if (highlightElement) {
     const highlightId = highlightElement.dataset.highlightId;
-    console.log('Deleting highlight from webpage:', highlightId);
+    console.log(`[Content] Deleting highlight from webpage:`, highlightId);
     chrome.runtime.sendMessage({
       type: "REMOVE_HIGHLIGHT",
       id: highlightId,
@@ -148,7 +165,7 @@ document.addEventListener("mouseup", (e) => {
   if (selection) {
     const selectedText = selection.toString().trim();
     if (selectedText.length > 0) {
-      console.log('Sending highlight:', selectedText);
+      console.log('[Content] Sending highlight:', selectedText);
       try {
       
           const range = selection.getRangeAt(0);
@@ -156,7 +173,7 @@ document.addEventListener("mouseup", (e) => {
           selection.removeAllRanges();
 
       } catch (error) {
-        console.error("Error sending highlight:", error);
+        console.error("[Content] Error sending highlight:", error);
       }
     }
   }

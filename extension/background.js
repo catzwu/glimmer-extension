@@ -1,163 +1,244 @@
-let isExtensionActive = true;
-let highlights = [];
-let cards = [];
+// Store tab-specific data
+const tabData = new Map();
 
-// Load initial state from storage
-chrome.storage.local.get(["highlights", "cards", "isActive"], (result) => {
-  highlights = result.highlights || [];
-  cards = result.cards || [];
-  isExtensionActive = result.isActive ?? true;
+// Default state for new tabs
+const getDefaultTabState = () => ({
+  highlights: [],
+  cards: [],
+  isActive: false,
 });
 
-// Save state to storage
-const saveState = () => {
+// Save state for a specific tab
+const saveTabState = (tabId) => {
+  console.log(`[Background] Saving state for tab ${tabId}:`, tabData.get(tabId));
+  const data = tabData.get(tabId) || getDefaultTabState();
   chrome.storage.local.set({
-    highlights,
-    cards,
-    isActive: isExtensionActive,
+    [`tab_${tabId}`]: data,
   });
 };
 
+// Load state for a specific tab
+const loadTabState = async (tabId) => {
+  console.log(`[Background] Loading state for tab ${tabId}`);
+  const result = await chrome.storage.local.get([`tab_${tabId}`]);
+  const data = result[`tab_${tabId}`] || getDefaultTabState();
+  tabData.set(tabId, data);
+  console.log(`[Background] Loaded state:`, data);
+  return data;
+};
+
+// Notify content script of state changes
+const notifyContentScript = (tabId, message) => {
+  console.log(`[Background] Notifying content script in tab ${tabId}:`, message);
+  chrome.tabs.sendMessage(tabId, message).catch(error => {
+    console.log(`[Background] Could not notify content script (tab might not be loaded yet):`, error);
+  });
+};
+
+// Notify extension popup of state changes
+const notifyExtension = (message) => {
+  console.log(`[Background] Notifying extension popup:`, message);
+  chrome.runtime.sendMessage(message).catch(error => {
+    console.log(`[Background] Could not notify extension popup (might not be open):`, error);
+  });
+};
+
+// Clean up tab data when tab is closed
+chrome.tabs.onRemoved.addListener((tabId) => {
+  console.log(`[Background] Cleaning up data for closed tab ${tabId}`);
+  tabData.delete(tabId);
+  chrome.storage.local.remove([`tab_${tabId}`]);
+});
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log("Background received:", message.type);
+  console.log("[Background] Received message:", message);
+  console.log("[Background] From sender:", sender);
+  
+  // Get tabId either from sender.tab or message.tabId
+  const tabId = sender.tab?.id || message.tabId;
+  console.log("[Background] Using tabId:", tabId);
 
   switch (message.type) {
+    case "GET_CURRENT_TAB_ID":
+      // If the message comes from content script, we already have the tab ID
+      if (sender.tab?.id) {
+        console.log("[Background] Returning current tab ID from sender:", sender.tab.id);
+        sendResponse({ tabId: sender.tab.id });
+        return;
+      }
+      // Otherwise, we need to query for the active tab
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        const currentTabId = tabs[0]?.id;
+        console.log("[Background] Returning current tab ID from query:", currentTabId);
+        sendResponse({ tabId: currentTabId });
+      });
+      return true; // Required for async response
+
     case "TOGGLE_ACTIVATION":
-      isExtensionActive = message.isActive;
-      saveState();
+      {
+        if (!tabId) {
+          console.error("[Background] No tab ID for toggle activation");
+          sendResponse({ success: false, error: "No tab ID found" });
+          return;
+        }
 
-      chrome.tabs.query({}, (tabs) => {
-        tabs.forEach((tab) => {
-          if (tab.id) {
-            chrome.tabs
-              .sendMessage(tab.id, {
-                type: "EXTENSION_STATE",
-                isActive: isExtensionActive,
-              })
-              .catch(() => {
-                // Ignore errors for tabs without content script
-              });
-          }
+        console.log(`[Background] Toggling activation for tab ${tabId}`);
+        const data = tabData.get(tabId) || getDefaultTabState();
+        data.isActive = !data.isActive;
+        tabData.set(tabId, data);
+        saveTabState(tabId);
+
+        console.log(`[Background] New activation state for tab ${tabId}:`, data.isActive);
+        
+        // Notify both content script and extension popup
+        notifyContentScript(tabId, {
+          type: "ACTIVATION_CHANGED",
+          isActive: data.isActive
         });
-      });
-      sendResponse({ success: true });
+        
+        notifyExtension({
+          type: "ACTIVATION_CHANGED",
+          isActive: data.isActive,
+          tabId: tabId
+        });
+
+        sendResponse({ success: true });
+      }
       break;
 
-    case "GET_EXTENSION_STATE":
-      sendResponse({
-        isActive: isExtensionActive,
-        highlights,
-        cards,
-      });
-      break;
+    case "GET_STATE":
+      {
+        if (!tabId) {
+          console.error("[Background] No tab ID for get state");
+          sendResponse(getDefaultTabState());
+          return;
+        }
+
+        console.log(`[Background] Getting state for tab ${tabId}`);
+        loadTabState(tabId).then((data) => {
+          console.log(`[Background] Sending state for tab ${tabId}:`, data);
+          sendResponse(data);
+        });
+        return true; // Required for async response
+      }
 
     case "ADD_HIGHLIGHT":
-      if (message.text) {
+      {
+        if (!tabId) {
+          console.error("[Background] No tab ID for add highlight");
+          sendResponse({ success: false, error: "No tab ID found" });
+          return;
+        }
+
+        console.log(`[Background] Adding highlight for tab ${tabId}`);
+        const data = tabData.get(tabId) || getDefaultTabState();
         const newHighlight = {
           id: message.id,
           text: message.text,
           url: sender.tab?.url || "",
           timestamp: Date.now(),
         };
-        highlights = [...highlights, newHighlight];
-        saveState();
-        // Notify popup of new highlight
-        chrome.runtime
-          .sendMessage({
-            type: "HIGHLIGHTS_UPDATED",
-            highlights,
-          })
-          .catch(() => {
-            // Ignore errors if popup is not open
-          });
+        data.highlights = [...data.highlights, newHighlight];
+        tabData.set(tabId, data);
+        saveTabState(tabId);
+
+        console.log(`[Background] New highlights for tab ${tabId}:`, data.highlights);
+        
+        // Notify extension popup
+        notifyExtension({
+          type: "HIGHLIGHTS_UPDATED",
+          highlights: data.highlights,
+          tabId: tabId
+        });
+
+        sendResponse({ success: true });
       }
-      sendResponse({ success: true });
       break;
 
     case "REMOVE_HIGHLIGHT":
-      console.log("Removing highlight (background):", message.id);
-      if (message.id) {
-        highlights = highlights.filter(
-          (highlight) => highlight.id !== message.id
-        );
-        saveState();
-        sendResponse({ success: true });
+      {
+        if (!tabId) {
+          console.error("[Background] No tab ID for remove highlight");
+          sendResponse({ success: false, error: "No tab ID found" });
+          return;
+        }
 
-        // Notify popup of removed highlight if the sender is the content script
-        console.log("Notifying popup of removed highlight:", message.id);
-        chrome.runtime
-          .sendMessage({
-            type: "HIGHLIGHTS_UPDATED",
-            highlights,
-          })
-          .catch(() => {
-            // Ignore errors if popup is not open
-          });
+        console.log(`[Background] Removing highlight for tab ${tabId}`);
+        const data = tabData.get(tabId) || getDefaultTabState();
+        data.highlights = data.highlights.filter((h) => h.id !== message.id);
+        tabData.set(tabId, data);
+        saveTabState(tabId);
 
-        // Notify content script of removed highlight if the sender is the popup
-        chrome.tabs.query({}, (tabs) => {
-          tabs.forEach((tab) => {
-            if (tab.id) {
-              chrome.tabs
-                .sendMessage(tab.id, {
-                  type: "REMOVE_HIGHLIGHT_CONTENT_SCRIPT",
-                  id: message.id,
-                })
-                .catch(() => {
-                  // Ignore errors for tabs without content script
-                });
-            }
-          });
+        // Notify both content script and extension popup
+        notifyContentScript(tabId, {
+          type: "REMOVE_HIGHLIGHT_CONTENT_SCRIPT",
+          id: message.id
         });
-      } else {
-        sendResponse({ error: "Invalid highlight ID" });
-      }
-      break;
+        
+        notifyExtension({
+          type: "HIGHLIGHTS_UPDATED",
+          highlights: data.highlights,
+          tabId: tabId
+        });
 
-    case "ADD_CARDS":
-      if (message.cards) {
-        console.log("Background adding cards:", message.cards);
-        cards = message.cards;
-        saveState();
         sendResponse({ success: true });
-      } else {
-        sendResponse({ error: "Invalid card data" });
-      }
-      break;
-
-    case "REMOVE_CARD":
-      if (message.index !== undefined) {
-        console.log("Background removing card at index:", message.index);
-        cards.splice(message.index, 1);
-        saveState();
-        sendResponse({ success: true });
-      } else {
-        sendResponse({ error: "Invalid card index" });
       }
       break;
 
     case "CLEAR_HIGHLIGHTS":
-      highlights = [];
-      saveState();
-      sendResponse({ success: true });
+      {
+        if (!tabId) {
+          console.error("[Background] No tab ID for clear highlights");
+          sendResponse({ success: false, error: "No tab ID found" });
+          return;
+        }
+
+        console.log(`[Background] Clearing highlights for tab ${tabId}`);
+        const data = tabData.get(tabId) || getDefaultTabState();
+        data.highlights = [];
+        tabData.set(tabId, data);
+        saveTabState(tabId);
+
+        // Notify extension popup
+        notifyExtension({
+          type: "HIGHLIGHTS_UPDATED",
+          highlights: data.highlights,
+          tabId: tabId
+        });
+
+        sendResponse({ success: true });
+      }
       break;
 
+    case "ADD_CARDS":
+    case "REMOVE_CARD":
     case "CLEAR_CARDS":
-      cards = [];
-      saveState();
-      sendResponse({ success: true });
-      break;
+      {
+        if (!tabId) {
+          console.error(`[Background] No tab ID for ${message.type}`);
+          sendResponse({ success: false, error: "No tab ID found" });
+          return;
+        }
 
-    case "GET_HIGHLIGHTS":
-      sendResponse({ highlights });
-      break;
+        console.log(`[Background] Processing ${message.type} for tab ${tabId}`);
+        const data = tabData.get(tabId) || getDefaultTabState();
+        
+        switch (message.type) {
+          case "ADD_CARDS":
+            data.cards = [...data.cards, ...message.cards];
+            break;
+          case "REMOVE_CARD":
+            data.cards = data.cards.filter((_, i) => i !== message.index);
+            break;
+          case "CLEAR_CARDS":
+            data.cards = [];
+            break;
+        }
 
-    case "GET_CARDS":
-      sendResponse({ cards });
+        tabData.set(tabId, data);
+        saveTabState(tabId);
+        sendResponse({ success: true });
+      }
       break;
-
-    default:
-      sendResponse({ error: "Unknown message type" });
   }
-  return true; // Keep the message channel open for async response
 });
