@@ -6,59 +6,8 @@ interface MarkdownExporterProps {
   showStatus: (message: string, type?: "success" | "error") => void;
 }
 
-const MarkdownExporter: React.FC<MarkdownExporterProps> = ({ showStatus }) => {
-  const { highlights, cards } = useExtension();
-  const [currentUrl, setCurrentUrl] = useState<string>("");
-  const [pageTitle, setPageTitle] = useState<string>("");
-  const [showSettings, setShowSettings] = useState(false);
-  const [obsidianVault, setObsidianVault] = useState("cwu");
-  const [obsidianFolder, setObsidianFolder] = useState("30 readings");
-  const [silentMode, setSilentMode] = useState(true);
-
-  // Get current tab URL and title, and load saved settings when component mounts
-  useEffect(() => {
-    const getCurrentTabInfo = async () => {
-      try {
-        const tabs = await chrome.tabs.query({
-          active: true,
-          currentWindow: true,
-        });
-        const url = tabs[0]?.url || "No URL available";
-        const title = tabs[0]?.title || "Untitled Page";
-        console.log("[MarkdownExporter] Got current tab info:", { url, title });
-        setCurrentUrl(url);
-        setPageTitle(title);
-      } catch (error) {
-        console.error(
-          "[MarkdownExporter] Error getting current tab info:",
-          error
-        );
-        setCurrentUrl("Error getting URL");
-        setPageTitle("Error getting title");
-      }
-    };
-
-    getCurrentTabInfo();
-
-    // Load saved Obsidian settings
-    chrome.storage.local.get(
-      ["obsidianVault", "obsidianFolder", "silentMode"],
-      (result) => {
-        if (result.obsidianVault) {
-          setObsidianVault(result.obsidianVault);
-        }
-        if (result.obsidianFolder) {
-          setObsidianFolder(result.obsidianFolder);
-        }
-        if (typeof result.silentMode === "boolean") {
-          setSilentMode(result.silentMode);
-        }
-      }
-    );
-  }, []);
-
-  const [template, setTemplate] = useState(`---
-updated: ${new Date().toISOString().slice(0, 10)}
+const DEFAULT_TEMPLATE = `---
+updated: {{date}}
 link: {{url}}
 recommended: false
 type: [[Readings]]
@@ -71,25 +20,85 @@ type: [[Readings]]
 {{highlights}}
 
 ### Flashcards
-{{flashcards}}`);
+{{flashcards}}`;
+
+const MarkdownExporter: React.FC<MarkdownExporterProps> = ({ showStatus }) => {
+  const { highlights, cards } = useExtension();
+  const [currentUrl, setCurrentUrl] = useState("");
+  const [pageTitle, setPageTitle] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
+  const [obsidianVault, setObsidianVault] = useState("cwu");
+  const [obsidianFolder, setObsidianFolder] = useState("30 readings");
+  const [silentMode, setSilentMode] = useState(true);
+
+  useEffect(() => {
+    const getCurrentTabInfo = async () => {
+      try {
+        const tabs = await chrome.tabs.query({
+          active: true,
+          currentWindow: true,
+        });
+        const url = tabs[0]?.url || "No URL available";
+        const title = tabs[0]?.title || "Untitled Page";
+        setCurrentUrl(url);
+        setPageTitle(title);
+      } catch (error) {
+        console.error("[MarkdownExporter] Error getting tab info:", error);
+        setCurrentUrl("Error getting URL");
+        setPageTitle("Error getting title");
+      }
+    };
+
+    const loadSavedSettings = () => {
+      chrome.storage.local.get(
+        ["obsidianVault", "obsidianFolder", "silentMode"],
+        (result) => {
+          if (result.obsidianVault) setObsidianVault(result.obsidianVault);
+          if (result.obsidianFolder) setObsidianFolder(result.obsidianFolder);
+          if (typeof result.silentMode === "boolean") setSilentMode(result.silentMode);
+        }
+      );
+    };
+
+    getCurrentTabInfo();
+    loadSavedSettings();
+  }, []);
 
   const sanitizeFilename = (filename: string): string => {
-    // Replace invalid filename characters with underscores
-    return filename.replace(/[<>:"/\\|?*]/g, "_").slice(0, 100); // Limit length to avoid too long filenames
+    return filename.replace(/[<>:"/\\|?*]/g, "_").slice(0, 100);
   };
 
   const updateSettings = () => {
     chrome.storage.local.set(
-      {
-        obsidianVault,
-        obsidianFolder,
-        silentMode,
-      },
+      { obsidianVault, obsidianFolder, silentMode },
       () => {
         setShowSettings(false);
         showStatus("Settings saved successfully!", "success");
       }
     );
+  };
+
+  const createMarkdownContent = () => {
+    const highlightsText = highlights.map((highlight) => `- ${highlight.text}`);
+    return DEFAULT_TEMPLATE
+      .replace("{{date}}", new Date().toISOString().slice(0, 10))
+      .replace("{{title}}", pageTitle)
+      .replace("{{url}}", currentUrl)
+      .replace("{{highlights}}", highlightsText.join("\n"))
+      .replace("{{flashcards}}", cards.join("\n"));
+  };
+
+  const createObsidianUri = (content: string) => {
+    const filename = sanitizeFilename(pageTitle);
+    const filepath = obsidianFolder ? `${obsidianFolder}/${filename}` : filename;
+    const params = new URLSearchParams({
+      vault: obsidianVault,
+      file: filepath,
+      content,
+      append: "true",
+      ...(silentMode && { silent: "true" }),
+    });
+    return `obsidian://new?${params.toString()}`;
   };
 
   const exportToObsidian = async () => {
@@ -100,42 +109,12 @@ type: [[Readings]]
         return;
       }
 
-      console.log("[MarkdownExporter] Exporting to Obsidian:", {
-        vault: obsidianVault,
-        folder: obsidianFolder,
-        silent: silentMode,
-      });
-
-      const highlightsText = highlights.map(
-        (highlight) => `- ${highlight.text}`
-      );
-
-      const markdownContent = template
-        .replace(/{{title}}/g, pageTitle) // Keep original title with spaces
-        .replace("{{url}}", currentUrl)
-        .replace("{{highlights}}", highlightsText.join("\n"))
-        .replace("{{flashcards}}", cards.join("\n"));
-
-      // Create the Obsidian URI
-      const filename = sanitizeFilename(pageTitle);
-      const filepath = obsidianFolder
-        ? `${obsidianFolder}/${filename}`
-        : filename;
-      const encodedContent = encodeURIComponent(markdownContent);
-      const obsidianUri = `obsidian://new?vault=${encodeURIComponent(
-        obsidianVault
-      )}&file=${encodeURIComponent(
-        filepath
-      )}&content=${encodedContent}&append=true${
-        silentMode ? "&silent=true" : ""
-      }`;
-
-      // Open the Obsidian URI
+      const markdownContent = createMarkdownContent();
+      const obsidianUri = createObsidianUri(markdownContent);
       window.open(obsidianUri, "_blank");
       showStatus("File created in Obsidian!", "success");
-      console.log("[MarkdownExporter] Successfully exported to Obsidian");
     } catch (error) {
-      console.error("[MarkdownExporter] Error exporting to Obsidian:", error);
+      console.error("[MarkdownExporter] Export error:", error);
       showStatus("Failed to export to Obsidian", "error");
     }
   };
@@ -154,7 +133,7 @@ type: [[Readings]]
       <div className="flex items-center justify-between text-sm">
         {!showSettings && (
           <button
-            onClick={() => setShowSettings(!showSettings)}
+            onClick={() => setShowSettings(true)}
             className="text-blue-500 hover:text-blue-600"
           >
             Obsidian Settings
@@ -162,9 +141,7 @@ type: [[Readings]]
         )}
         {!showSettings && obsidianVault && (
           <span className="text-gray-500">
-            {obsidianFolder
-              ? `${obsidianVault}/${obsidianFolder}`
-              : obsidianVault}
+            {obsidianFolder ? `${obsidianVault}/${obsidianFolder}` : obsidianVault}
           </span>
         )}
       </div>
