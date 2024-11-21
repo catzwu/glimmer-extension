@@ -115,12 +115,12 @@ const AICardGenerator: React.FC<AICardGeneratorProps> = ({ showStatus }) => {
           disabled={isGenerating || highlights.length === 0}
           className="primary-button"
         >
-          {isGenerating ? "Generating..." : "Generate AI Flashcards"}
+          {isGenerating ? "Generating..." : "Generate Flashcards"}
         </button>
       ) : (
         <>
           <div className="flashcards-header">
-            <h3>AI-Generated Flashcards</h3>
+            <h3>Flashcards</h3>
             <button
               onClick={generateFlashcards}
               disabled={isGenerating}

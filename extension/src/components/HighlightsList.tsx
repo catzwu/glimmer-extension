@@ -23,6 +23,10 @@ const HighlightsList: React.FC = () => {
                   chrome.runtime.sendMessage({
                     type: "REMOVE_HIGHLIGHT",
                     id: highlight.id,
+                    tabId: chrome.tabs?.query(
+                      { active: true, currentWindow: true },
+                      (tabs) => tabs[0]?.id
+                    ),
                   });
                 }}
                 aria-label="Delete highlight"

@@ -10,7 +10,10 @@ const getDefaultTabState = () => ({
 
 // Save state for a specific tab
 const saveTabState = (tabId) => {
-  console.log(`[Background] Saving state for tab ${tabId}:`, tabData.get(tabId));
+  console.log(
+    `[Background] Saving state for tab ${tabId}:`,
+    tabData.get(tabId)
+  );
   const data = tabData.get(tabId) || getDefaultTabState();
   chrome.storage.local.set({
     [`tab_${tabId}`]: data,
@@ -29,17 +32,26 @@ const loadTabState = async (tabId) => {
 
 // Notify content script of state changes
 const notifyContentScript = (tabId, message) => {
-  console.log(`[Background] Notifying content script in tab ${tabId}:`, message);
-  chrome.tabs.sendMessage(tabId, message).catch(error => {
-    console.log(`[Background] Could not notify content script (tab might not be loaded yet):`, error);
+  console.log(
+    `[Background] Notifying content script in tab ${tabId}:`,
+    message
+  );
+  chrome.tabs.sendMessage(tabId, message).catch((error) => {
+    console.log(
+      `[Background] Could not notify content script (tab might not be loaded yet):`,
+      error
+    );
   });
 };
 
 // Notify extension popup of state changes
 const notifyExtension = (message) => {
   console.log(`[Background] Notifying extension popup:`, message);
-  chrome.runtime.sendMessage(message).catch(error => {
-    console.log(`[Background] Could not notify extension popup (might not be open):`, error);
+  chrome.runtime.sendMessage(message).catch((error) => {
+    console.log(
+      `[Background] Could not notify extension popup (might not be open):`,
+      error
+    );
   });
 };
 
@@ -50,15 +62,60 @@ chrome.tabs.onRemoved.addListener((tabId) => {
   chrome.storage.local.remove([`tab_${tabId}`]);
 });
 
+// Open side panel when extension icon is clicked
+chrome.action.onClicked.addListener((tab) => {
+  // Directly open the panel first
+  console.log("[Background] Opening side panel for tab:", tab.id);
+
+  chrome.sidePanel.setOptions({
+    path: "index.html",
+    enabled: true,
+  });
+  chrome.sidePanel.open({ windowId: tab.windowId }).catch((error) => {
+    console.error("[Background] Error opening side panel:", error);
+  });
+});
+
+chrome.tabs.onActivated.addListener((activeInfo) => {
+  console.log("[Background] Tab activated:", activeInfo);
+
+  if (!activeInfo.tabId) return;
+
+  console.log("[Background] Disabling side panel for new tab");
+  chrome.sidePanel.setOptions({
+    enabled: false,
+  });
+});
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log("[Background] Received message:", message);
   console.log("[Background] From sender:", sender);
-  
+
   // Get tabId either from sender.tab or message.tabId
   const tabId = sender.tab?.id || message.tabId;
   console.log("[Background] Using tabId:", tabId);
 
   switch (message.type) {
+    case "CLOSE_SIDE_PANEL": {
+      console.log(
+        "[Background] Handling close side panel request for tab:",
+        message.tabId
+      );
+      chrome.sidePanel
+        .setOptions({
+          enabled: false,
+        })
+        .then(() => {
+          console.log("[Background] Side panel closed successfully");
+          sendResponse({ success: true });
+        })
+        .catch((error) => {
+          console.error("[Background] Error closing side panel:", error);
+          sendResponse({ success: false, error });
+        });
+      return true; // Required for async response
+    }
+
     case "TOGGLE_ACTIVATION":
       {
         if (!tabId) {
@@ -73,39 +130,41 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         tabData.set(tabId, data);
         saveTabState(tabId);
 
-        console.log(`[Background] New activation state for tab ${tabId}:`, data.isActive);
-        
+        console.log(
+          `[Background] New activation state for tab ${tabId}:`,
+          data.isActive
+        );
+
         // Notify both content script and extension popup
         notifyContentScript(tabId, {
           type: "ACTIVATION_CHANGED",
-          isActive: data.isActive
+          isActive: data.isActive,
         });
-        
+
         notifyExtension({
           type: "ACTIVATION_CHANGED",
           isActive: data.isActive,
-          tabId: tabId
+          tabId: tabId,
         });
 
         sendResponse({ success: true });
       }
       break;
 
-    case "GET_STATE":
-      {
-        if (!tabId) {
-          console.error("[Background] No tab ID for get state");
-          sendResponse(getDefaultTabState());
-          return;
-        }
-
-        console.log(`[Background] Getting state for tab ${tabId}`);
-        loadTabState(tabId).then((data) => {
-          console.log(`[Background] Sending state for tab ${tabId}:`, data);
-          sendResponse(data);
-        });
-        return true; // Required for async response
+    case "GET_STATE": {
+      if (!tabId) {
+        console.error("[Background] No tab ID for get state");
+        sendResponse(getDefaultTabState());
+        return;
       }
+
+      console.log(`[Background] Getting state for tab ${tabId}`);
+      loadTabState(tabId).then((data) => {
+        console.log(`[Background] Sending state for tab ${tabId}:`, data);
+        sendResponse(data);
+      });
+      return true; // Required for async response
+    }
 
     case "ADD_HIGHLIGHT":
       {
@@ -127,13 +186,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         tabData.set(tabId, data);
         saveTabState(tabId);
 
-        console.log(`[Background] New highlights for tab ${tabId}:`, data.highlights);
-        
+        console.log(
+          `[Background] New highlights for tab ${tabId}:`,
+          data.highlights
+        );
+
         // Notify extension popup
         notifyExtension({
           type: "HIGHLIGHTS_UPDATED",
           highlights: data.highlights,
-          tabId: tabId
+          tabId: tabId,
         });
 
         sendResponse({ success: true });
@@ -157,13 +219,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         // Notify both content script and extension popup
         notifyContentScript(tabId, {
           type: "REMOVE_HIGHLIGHT_CONTENT_SCRIPT",
-          id: message.id
+          id: message.id,
         });
-        
+
         notifyExtension({
           type: "HIGHLIGHTS_UPDATED",
           highlights: data.highlights,
-          tabId: tabId
+          tabId: tabId,
         });
 
         sendResponse({ success: true });
@@ -188,7 +250,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         notifyExtension({
           type: "HIGHLIGHTS_UPDATED",
           highlights: data.highlights,
-          tabId: tabId
+          tabId: tabId,
         });
 
         sendResponse({ success: true });
@@ -207,7 +269,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         console.log(`[Background] Processing ${message.type} for tab ${tabId}`);
         const data = tabData.get(tabId) || getDefaultTabState();
-        
+
         switch (message.type) {
           case "ADD_CARDS":
             data.cards = [...data.cards, ...message.cards];
