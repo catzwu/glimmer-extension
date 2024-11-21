@@ -9,9 +9,7 @@ let isExtensionActive = false;  // Start with inactive state by default
 // Function to initialize the content script
 const initialize = async () => {
   try {
-    console.log('[Content] Initializing content script');
     // Get initial state
-    console.log('[Content] Getting initial state');
     const response = await chrome.runtime.sendMessage({ 
       type: "GET_STATE"
     });
@@ -35,12 +33,10 @@ chrome.runtime.onMessage.addListener((message: any, sender: chrome.runtime.Messa
   switch (message.type) {
     case "ACTIVATION_CHANGED":
       isExtensionActive = message.isActive;
-      console.log('[Content] Extension activation state updated:', isExtensionActive);
       sendResponse({ received: true });
       break;
 
     case "REMOVE_HIGHLIGHT_CONTENT_SCRIPT":
-      console.log('[Content] Removing highlight from popup:', message);
       const element = document.querySelector(`[data-highlight-id="${message.id}"]`);
       if (!element) {
         console.error('[Content] Cannot find element with highlight id:', message.id);
@@ -54,7 +50,6 @@ chrome.runtime.onMessage.addListener((message: any, sender: chrome.runtime.Messa
 });
 
 function showHighlightFeedback(x: number, y: number) {
-  console.log('[Content] Showing highlight feedback at position:', { x, y });
   const feedback = document.createElement("div");
   feedback.textContent = "✓ Highlight saved!";
   feedback.className = "mochi-highlight-feedback";
@@ -65,10 +60,13 @@ function showHighlightFeedback(x: number, y: number) {
   setTimeout(() => feedback.remove(), 1500);
 }
 
-async function createHighlight(range: Range, x: number, y: number) {
+async function createHighlight(range: Range, x: number, y: number, selectedText: string) {
+  if(chrome.runtime.id === undefined) {
+    console.error('[Content] No runtime ID found');
+    return;
+  }
+
   try {
-    console.log('[Content] Creating highlight');
-    // Check if range is valid
     if (range.collapsed) {
       console.error('[Content] Invalid range: Range is collapsed');
       return;
@@ -77,23 +75,19 @@ async function createHighlight(range: Range, x: number, y: number) {
     // Create a new range to avoid modifying the original
     const safeRange = range.cloneRange();
     const highlightId = crypto.randomUUID();
-    
+
     try {
-      // Attempt to create highlight with the entire range
       const span = document.createElement('span');
       span.className = 'mochi-highlight-selection';
       span.dataset.highlightId = highlightId;
       safeRange.surroundContents(span);
       
-      const selectedText = span.textContent || '';
-      console.log('[Content] Sending ADD_HIGHLIGHT message:', selectedText);
       chrome.runtime.sendMessage({
         type: "ADD_HIGHLIGHT",
         text: selectedText,
         id: highlightId
       });
 
-      const rect = span.getBoundingClientRect();
       showHighlightFeedback(x, y);
 
     } catch (e) {
@@ -109,15 +103,12 @@ async function createHighlight(range: Range, x: number, y: number) {
       safeRange.deleteContents();
       safeRange.insertNode(span);
       
-      const selectedText = span.textContent || '';
-      console.log('[Content] Sending ADD_HIGHLIGHT message:', selectedText);
       chrome.runtime.sendMessage({
         type: "ADD_HIGHLIGHT",
         text: selectedText,
         id: highlightId
       });
 
-      const rect = span.getBoundingClientRect();
       showHighlightFeedback(x, y);
     }
   } catch (error) {
@@ -152,18 +143,18 @@ document.addEventListener("mouseup", (e) => {
 
   const selection = window.getSelection();
   if (selection) {
-    const selectedText = selection.toString().trim();
-    if (selectedText.length > 0) {
+  const selectedText = selection.toString().trim();
+  if (selectedText.length > 0) {
       console.log('[Content] Sending highlight:', selectedText);
-      try {
+    try {
       
-          const range = selection.getRangeAt(0);
-          createHighlight(range, e.clientX, e.clientY);
-          selection.removeAllRanges();
+      const range = selection.getRangeAt(0);
+      createHighlight(range, e.clientX, e.clientY, selectedText);
+      selection.removeAllRanges();
 
-      } catch (error) {
-        console.error("[Content] Error sending highlight:", error);
-      }
+    } catch (error) {
+      console.error("[Content] Error creating highlight:", error);
     }
-  }
+  }}
 });
+

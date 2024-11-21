@@ -310,6 +310,18 @@ button.secondary-button:disabled {
   margin: 10px 0;
 }
 
+/* Error banner styles */
+.error-banner {
+  background-color: #ff4444;
+  color: white;
+  padding: 1rem;
+  text-align: center;
+  font-weight: 500;
+  border-radius: 4px;
+  margin: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 /* Animations */
 @keyframes shake {
 

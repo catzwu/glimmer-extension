@@ -77,21 +77,19 @@ export const ExtensionProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const toggleActivation = async () => {
-    console.log('[ExtensionContext] Getting current tab for toggle activation');
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     const currentTab = tabs[0];
 
     if (!currentTab?.id) {
-      console.error('[ExtensionContext] No tab ID found for toggle activation');
+      console.error("[ExtensionContext] No tab ID found for toggle activation");
       return;
     }
 
-    console.log(`[ExtensionContext] Sending toggle activation for tab ${currentTab.id}`);
     const response = await chrome.runtime.sendMessage({
       type: "TOGGLE_ACTIVATION",
-      tabId: currentTab.id
+      tabId: currentTab.id,
     });
-    
+
     console.log(`[ExtensionContext] Toggle activation response:`, response);
     if (response?.success) {
       setIsActivated(!isActivated);
@@ -99,75 +97,67 @@ export const ExtensionProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const clearHighlights = async () => {
-    console.log('[ExtensionContext] Getting current tab for clear highlights');
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     const currentTab = tabs[0];
 
     if (!currentTab?.id) {
-      console.error('[ExtensionContext] No tab ID found for clear highlights');
+      console.error("[ExtensionContext] No tab ID found for clear highlights");
       return;
     }
 
-    console.log(`[ExtensionContext] Clearing highlights for tab ${currentTab.id}`);
-    await chrome.runtime.sendMessage({ 
+    await chrome.runtime.sendMessage({
       type: "CLEAR_HIGHLIGHTS",
-      tabId: currentTab.id
+      tabId: currentTab.id,
     });
     setHighlights([]);
   };
 
   const clearCards = async () => {
-    console.log('[ExtensionContext] Getting current tab for clear cards');
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     const currentTab = tabs[0];
 
     if (!currentTab?.id) {
-      console.error('[ExtensionContext] No tab ID found for clear cards');
+      console.error("[ExtensionContext] No tab ID found for clear cards");
       return;
     }
 
-    console.log(`[ExtensionContext] Clearing cards for tab ${currentTab.id}`);
-    await chrome.runtime.sendMessage({ 
+    await chrome.runtime.sendMessage({
       type: "CLEAR_CARDS",
-      tabId: currentTab.id
+      tabId: currentTab.id,
     });
     setCards([]);
   };
 
   const addCards = async (newCards: string[]) => {
-    console.log('[ExtensionContext] Getting current tab for add cards');
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     const currentTab = tabs[0];
 
     if (!currentTab?.id) {
-      console.error('[ExtensionContext] No tab ID found for add cards');
+      console.error("[ExtensionContext] No tab ID found for add cards");
       return;
     }
 
-    console.log(`[ExtensionContext] Adding cards for tab ${currentTab.id}:`, newCards);
-    await chrome.runtime.sendMessage({ 
-      type: "ADD_CARDS", 
+    await chrome.runtime.sendMessage({
+      type: "ADD_CARDS",
       cards: newCards,
-      tabId: currentTab.id
+      tabId: currentTab.id,
     });
     setCards([...cards, ...newCards]);
   };
 
   const removeCard = async (index: number) => {
-    console.log('[ExtensionContext] Getting current tab for remove card');
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     const currentTab = tabs[0];
 
     if (!currentTab?.id) {
-      console.error('[ExtensionContext] No tab ID found for remove card');
+      console.error("[ExtensionContext] No tab ID found for remove card");
       return;
     }
 
-    console.log(`[ExtensionContext] Removing card at index ${index} for tab ${currentTab.id}`);
-    await chrome.runtime.sendMessage({ 
-      type: "REMOVE_CARD", 
+    await chrome.runtime.sendMessage({
+      type: "REMOVE_CARD",
       index,
-      tabId: currentTab.id
+      tabId: currentTab.id,
     });
     setCards(cards.filter((_, i) => i !== index));
   };

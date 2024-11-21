@@ -35,7 +35,7 @@ const AICardGenerator: React.FC<AICardGeneratorProps> = ({ showStatus }) => {
         "anthropic-dangerous-direct-browser-access": "true",
       },
       body: JSON.stringify({
-        model: "claude-3-5-haiku-20241022",
+        model: "claude-3-5-sonnet-20241022",
         max_tokens: 1024,
         system:
           "You create perfect Anki flashcards, in accordance with the twenty rules of formulating knowledge",

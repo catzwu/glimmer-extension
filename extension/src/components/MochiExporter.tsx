@@ -29,7 +29,6 @@ const MochiExporter: React.FC<MochiExporterProps> = ({ showStatus }) => {
           currentWindow: true,
         });
         const url = tabs[0]?.url || "No URL available";
-        console.log("[MochiExporter] Got current tab URL:", url);
         setCurrentUrl(url);
       } catch (error) {
         console.error("[MochiExporter] Error getting current tab URL:", error);
@@ -58,7 +57,7 @@ const MochiExporter: React.FC<MochiExporterProps> = ({ showStatus }) => {
       for (const card of cards) {
         // Append source URL to card content
         const cardContent = `${card}\n\nSource: ${currentUrl}`;
-        
+
         const cardData = {
           content: cardContent,
           "deck-id": "mMrpYLrT", // Default deck ID

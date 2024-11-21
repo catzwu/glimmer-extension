@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./App.css";
 import ActivationToggle from "./components/ActivationToggle";
 import AICardGenerator from "./components/AICardGenerator";
@@ -11,6 +11,22 @@ import { ExtensionProvider } from "./contexts/ExtensionContext";
 const App: React.FC = () => {
   const [statusMessage, setStatusMessage] = useState<string>("");
   const [statusType, setStatusType] = useState<"success" | "error">("success");
+  const [isContextValid, setIsContextValid] = useState(true);
+
+  useEffect(() => {
+    // Check if extension context is valid
+    const checkContext = () => {
+      const isValid = !!chrome.runtime?.id;
+      setIsContextValid(isValid);
+      if (!isValid) {
+        setStatusMessage("Extension was updated. Please refresh the page.");
+        setStatusType("error");
+      }
+    };
+
+    // Initial check
+    checkContext();
+  }, []);
 
   const showStatus = (
     message: string,
@@ -22,29 +38,35 @@ const App: React.FC = () => {
   };
 
   const handleClose = async () => {
-    console.log("[App] handleClose called");
     try {
       const [tab] = await chrome.tabs.query({
         active: true,
         currentWindow: true,
       });
-      console.log("[App] Current tab:", tab);
 
       if (!tab || !tab.id) {
         console.error("[App] No valid tab found");
         return;
       }
 
-      console.log("[App] Sending close message to background script");
       await chrome.runtime.sendMessage({
         type: "CLOSE_SIDE_PANEL",
         tabId: tab.id,
       });
-      console.log("[App] Close message sent successfully");
     } catch (error) {
       console.error("[App] Error in handleClose:", error);
     }
   };
+
+  if (!isContextValid) {
+    return (
+      <div className="app-container">
+        <div className="error-banner">
+          Extension was updated. Please refresh the page.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ExtensionProvider>
@@ -87,7 +109,7 @@ const App: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <div className="flex-none p-4 border-t border-gray-200 bg-white">
+        <div className="flex-none border-t border-gray-200 bg-white">
           <div className="space-y-2">
             <MochiExporter showStatus={showStatus} />
             <MarkdownExporter showStatus={showStatus} />

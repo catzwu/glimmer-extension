@@ -14,12 +14,10 @@ type: [[Readings]]
 ---
 # {{title}}
 
-## Highlights and Flashcards
-
-### Highlights
+## Highlights
 {{highlights}}
 
-### Flashcards
+## Flashcards
 {{flashcards}}`;
 
 const MarkdownExporter: React.FC<MarkdownExporterProps> = ({ showStatus }) => {
@@ -55,7 +53,8 @@ const MarkdownExporter: React.FC<MarkdownExporterProps> = ({ showStatus }) => {
         (result) => {
           if (result.obsidianVault) setObsidianVault(result.obsidianVault);
           if (result.obsidianFolder) setObsidianFolder(result.obsidianFolder);
-          if (typeof result.silentMode === "boolean") setSilentMode(result.silentMode);
+          if (typeof result.silentMode === "boolean")
+            setSilentMode(result.silentMode);
         }
       );
     };
@@ -79,26 +78,46 @@ const MarkdownExporter: React.FC<MarkdownExporterProps> = ({ showStatus }) => {
   };
 
   const createMarkdownContent = () => {
-    const highlightsText = highlights.map((highlight) => `- ${highlight.text}`);
-    return DEFAULT_TEMPLATE
-      .replace("{{date}}", new Date().toISOString().slice(0, 10))
+    const highlightsText = highlights
+      .map((highlight) => highlight.text.trim())
+      .map((text) => `- ${text}`);
+
+    const cardsText = cards.filter((card) => card.trim()).join("\n");
+
+    return DEFAULT_TEMPLATE.replace(
+      "{{date}}",
+      new Date().toISOString().slice(0, 10)
+    )
       .replace("{{title}}", pageTitle)
       .replace("{{url}}", currentUrl)
-      .replace("{{highlights}}", highlightsText.join("\n"))
-      .replace("{{flashcards}}", cards.join("\n"));
+      .replace(
+        "{{highlights}}",
+        highlightsText.length
+          ? highlightsText.join("\n")
+          : "_No highlights yet_"
+      )
+      .replace("{{flashcards}}", cardsText || "_No flashcards yet_")
+      .trim();
   };
 
   const createObsidianUri = (content: string) => {
     const filename = sanitizeFilename(pageTitle);
-    const filepath = obsidianFolder ? `${obsidianFolder}/${filename}` : filename;
-    const params = new URLSearchParams({
-      vault: obsidianVault,
-      file: filepath,
-      content,
-      append: "true",
-      ...(silentMode && { silent: "true" }),
-    });
-    return `obsidian://new?${params.toString()}`;
+    const filepath = obsidianFolder
+      ? `${obsidianFolder}/${filename}`
+      : filename;
+
+    let uri = `obsidian://new?vault=${encodeURIComponent(
+      obsidianVault
+    )}&file=${encodeURIComponent(filepath)}`;
+
+    uri += `&content=${encodeURIComponent(content)}`;
+    uri += "&append=true";
+
+    if (silentMode) {
+      uri += "&silent=true";
+    }
+
+    return uri;
   };
 
   const exportToObsidian = async () => {
@@ -141,7 +160,9 @@ const MarkdownExporter: React.FC<MarkdownExporterProps> = ({ showStatus }) => {
         )}
         {!showSettings && obsidianVault && (
           <span className="text-gray-500">
-            {obsidianFolder ? `${obsidianVault}/${obsidianFolder}` : obsidianVault}
+            {obsidianFolder
+              ? `${obsidianVault}/${obsidianFolder}`
+              : obsidianVault}
           </span>
         )}
       </div>
