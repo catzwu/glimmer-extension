@@ -9,8 +9,10 @@ const ActivationToggle: React.FC = () => {
     <div className="flex justify-between items-center">
       <button
         onClick={toggleActivation}
-        className={`px-4 py-2 rounded ${
-          isActivated ? "bg-green-500 text-white" : "bg-red-500 text-white"
+        className={`px-4 py-2 rounded transition-colors duration-300 text-white ${
+          isActivated
+            ? "bg-[var(--primary-color)] hover:bg-[var(--primary-hover)]"
+            : "bg-[var(--error-color)] hover:bg-[var(--error-dark)]"
         }`}
       >
         {isActivated ? "On" : "Off"}

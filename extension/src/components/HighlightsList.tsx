@@ -6,7 +6,7 @@ const HighlightsList: React.FC = () => {
 
   return (
     <div className="">
-      <h3 className="h3">Current Highlights</h3>
+      <h3 className="h3">Highlights</h3>
 
       {highlights.length === 0 ? (
         <p className="text-gray-500 italic bg-gray-100 p-4 rounded-lg">
@@ -19,14 +19,16 @@ const HighlightsList: React.FC = () => {
               <div className="highlight-text">{highlight.text}</div>
               <button
                 className="delete-highlight"
-                onClick={() => {
+                onClick={async () => {
+                  const [tab] = await chrome.tabs.query({
+                    active: true,
+                    currentWindow: true,
+                  });
+                  
                   chrome.runtime.sendMessage({
                     type: "REMOVE_HIGHLIGHT",
                     id: highlight.id,
-                    tabId: chrome.tabs?.query(
-                      { active: true, currentWindow: true },
-                      (tabs) => tabs[0]?.id
-                    ),
+                    tabId: tab.id,
                   });
                 }}
                 aria-label="Delete highlight"

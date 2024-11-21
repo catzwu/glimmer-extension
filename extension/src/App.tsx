@@ -48,8 +48,9 @@ const App: React.FC = () => {
 
   return (
     <ExtensionProvider>
-      <div className="container flex flex-col h-screen">
-        <div className="sticky top-0 bg-white z-10 pb-4 border-b border-gray-200">
+      <div className="h-screen flex flex-col p-4">
+        {/* Header container - not flex */}
+        <div className="sticky top-0 bg-white z-10 pb-4 border-b border-gray-200 w-full">
           <div className="flex justify-between items-center">
             <ActivationToggle />
             <button
@@ -60,33 +61,37 @@ const App: React.FC = () => {
               <svg
                 className="w-5 h-5 text-gray-500"
                 fill="none"
-                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
                 viewBox="0 0 24 24"
+                stroke="currentColor"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
+                <path d="M6 18L18 6M6 6l12 12"></path>
               </svg>
             </button>
           </div>
         </div>
 
-        <div className="flex flex-col flex-1 min-h-0 space-y-4 my-4">
-          <section className="flex-none">
-            <HighlightsList />
-          </section>
+        {/* Scrollable content area */}
+        <div className="overflow-auto flex-1">
+          <div className="space-y-4 my-4">
+            <section className="flex-none">
+              <HighlightsList />
+            </section>
 
-          <section className="flex-1 min-h-0 overflow-auto">
-            <AICardGenerator showStatus={showStatus} />
-          </section>
+            <section className="flex-1 min-h-0">
+              <AICardGenerator showStatus={showStatus} />
+            </section>
+          </div>
+        </div>
 
-          <section className="flex-none space-y-2">
+        {/* Footer */}
+        <div className="flex-none p-4 border-t border-gray-200 bg-white">
+          <div className="space-y-2">
             <MochiExporter showStatus={showStatus} />
             <MarkdownExporter showStatus={showStatus} />
-          </section>
+          </div>
         </div>
 
         {statusMessage && (
