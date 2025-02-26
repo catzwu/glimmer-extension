@@ -70,14 +70,14 @@ const App: React.FC = () => {
 
   return (
     <ExtensionProvider>
-      <div className="h-screen flex flex-col p-4">
+      <div className="h-screen flex flex-col px-4 py-2">
         {/* Header container - not flex */}
-        <div className="sticky top-0 bg-white z-10 pb-4 border-b border-gray-200 w-full">
+        <div className="sticky top-0 bg-white z-10 pb-2 border-b border-gray-100 w-full">
           <div className="flex justify-between items-center">
             <ActivationToggle />
             <button
               onClick={handleClose}
-              className="p-2 hover:bg-gray-100 rounded-full"
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors duration-300"
               title="Close sidebar"
             >
               <svg
@@ -97,7 +97,7 @@ const App: React.FC = () => {
 
         {/* Scrollable content area */}
         <div className="overflow-auto flex-1">
-          <div className="space-y-4 my-4">
+          <div className="space-y-4 mb-4">
             <section className="flex-none">
               <HighlightsList />
             </section>
@@ -109,7 +109,7 @@ const App: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <div className="flex-none border-t border-gray-200 bg-white">
+        <div className="flex-none border-t border-gray-200 bg-white py-4">
           <div className="space-y-2">
             <MochiExporter showStatus={showStatus} />
             <MarkdownExporter showStatus={showStatus} />

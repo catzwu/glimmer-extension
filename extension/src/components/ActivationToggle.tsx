@@ -9,13 +9,14 @@ const ActivationToggle: React.FC = () => {
     <div className="flex justify-between items-center">
       <button
         onClick={toggleActivation}
-        className={`px-4 py-2 rounded transition-colors duration-300 text-white ${
+        className={`px-1 py-1 rounded-full transition-all duration-300 text-white w-10 ${
           isActivated
-            ? "bg-[var(--primary-color)] hover:bg-[var(--primary-hover)]"
-            : "bg-[var(--error-color)] hover:bg-[var(--error-dark)]"
+            ? "bg-[var(--primary-color)] hover:bg-[var(--primary-hover)] justify-items-end"
+            : "bg-[var(--background-light)] hover:bg-gray-100 justify-items-start"
         }`}
       >
-        {isActivated ? "On" : "Off"}
+        <div className="bg-white w-4 h-4 rounded-full"></div>
+        {/* {isActivated ? "On" : "Off"} */}
       </button>
       <button
         className="clear-button"

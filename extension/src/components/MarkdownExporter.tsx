@@ -80,7 +80,7 @@ const MarkdownExporter: React.FC<MarkdownExporterProps> = ({ showStatus }) => {
   const createMarkdownContent = () => {
     const highlightsText = highlights
       .map((highlight) => highlight.text.trim())
-      .map((text) => `- ${text}`);
+      .map((text) => `> ${text}\n\n`);
 
     const cardsText = cards.filter((card) => card.trim()).join("\n");
 
